@@ -512,7 +512,7 @@ export const ParentPortal = ({
                             </div>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="outline" className="text-xs">
-                                {student.class}
+                                {student.class.replace(/Grade\s+(\d+)[A-Z]?/, 'Year $1')}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
                                 {language === 'th' ? campusList.find(c => c.nameEn === student.campus)?.name : student.campus}
