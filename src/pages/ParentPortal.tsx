@@ -38,11 +38,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Calendar, 
-  Clock, 
-  MapPin, 
+import {
+  Calendar,
+  Clock,
+  MapPin,
   Users,
+  User,
   DollarSign,
   CreditCard,
   GraduationCap,
@@ -471,11 +472,11 @@ export const ParentPortal = ({
         <div className="mb-6 p-3 sm:p-4 bg-gradient-to-r from-primary/10 to-education-blue/5 rounded-lg">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <MapPin className="h-6 w-6 text-primary flex-shrink-0" />
+              <User className="h-6 w-6 text-primary flex-shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <h2 className={`text-lg sm:text-xl font-bold truncate ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                    {language === 'th' ? campusList.find(c => c.nameEn === currentCampus)?.name : currentCampus} Campus
+                    John Smith
                   </h2>
                 </div>
                 
@@ -485,10 +486,7 @@ export const ParentPortal = ({
                     <Button variant="ghost" size="sm" className="h-auto p-0 hover:bg-transparent">
                       <div className="flex items-center gap-2">
                         <p className={`text-muted-foreground text-sm ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                          {mockStudents
-                            .filter(s => s.campus === currentCampus)
-                            .map((s, idx) => `${idx + 1}. ${s.name}`)
-                            .join(', ')}
+                          {language === 'th' ? 'ผู้ปกครอง: ' : language === 'zh' ? '家长：' : 'Parent: '}John Smith
                         </p>
                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       </div>
