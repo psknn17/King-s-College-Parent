@@ -20,7 +20,6 @@ import { MobileCartDrawer } from "@/components/portal/MobileCartDrawer";
 import { MobileFilterSection } from "@/components/portal/MobileFilterSection";
 import { MobileCardSkeleton, FilterSkeleton } from "@/components/portal/MobileCardSkeleton";
 import { MobileSummaryCarousel, MobileSummaryCarouselSkeleton } from "@/components/portal/MobileSummaryCarousel";
-import { QuickActions } from "@/components/portal/QuickActions";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -746,17 +745,6 @@ export const ParentPortal = ({
               </div>
             )}
 
-            {/* Quick Actions */}
-            <QuickActions
-              onPayNow={() => setActiveTab('tuition')}
-              onRegisterActivities={() => setActiveTab('afterschool')}
-              onRegisterCamp={() => setActiveTab('summer')}
-              onViewEvents={() => setActiveTab('event')}
-              onViewReceipts={() => setActiveTab('transaction')}
-              hasPendingPayments={allInvoices.filter(i => i.status === 'pending').length > 0}
-              isMobile={isMobile}
-            />
-
             {/* Upcoming Deadlines - Grouped by Type */}
             <Card>
               <CardHeader>
@@ -777,7 +765,7 @@ export const ParentPortal = ({
                       case 'trip': return Bus;
                       case 'camp': return Sun;
                       case 'exam': return FileText;
-                      case 'event': return PartyPopper;
+                      case 'schoolbus': return Bus;
                       default: return Calendar;
                     }
                   };
@@ -788,7 +776,7 @@ export const ParentPortal = ({
                       case 'trip': return 'bg-green-500/20 text-green-700 dark:text-green-300';
                       case 'camp': return 'bg-orange-500/20 text-orange-700 dark:text-orange-300';
                       case 'exam': return 'bg-purple-500/20 text-purple-700 dark:text-purple-300';
-                      case 'event': return 'bg-pink-500/20 text-pink-700 dark:text-pink-300';
+                      case 'schoolbus': return 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300';
                       default: return 'bg-muted text-muted-foreground';
                     }
                   };
@@ -799,7 +787,7 @@ export const ParentPortal = ({
                       case 'trip': return language === 'th' ? 'ทริป' : language === 'zh' ? '旅行' : 'Trip';
                       case 'camp': return language === 'th' ? 'แคมป์' : language === 'zh' ? '夏令营' : 'Camp';
                       case 'exam': return language === 'th' ? 'สอบ' : language === 'zh' ? '考试' : 'Exam';
-                      case 'event': return language === 'th' ? 'กิจกรรม' : language === 'zh' ? '活动' : 'Event';
+                      case 'schoolbus': return language === 'th' ? 'รถรับส่ง' : language === 'zh' ? '校车' : 'School Bus';
                       default: return type;
                     }
                   };
@@ -807,10 +795,10 @@ export const ParentPortal = ({
                     switch (type) {
                       case 'tuition': setActiveTab('tuition'); break;
                       case 'eca': setActiveTab('afterschool'); break;
-                      case 'trip': setActiveTab('event'); setEventSubTab('trip'); break;
+                      case 'trip': setActiveTab('summer'); break;
                       case 'camp': setActiveTab('summer'); break;
-                      case 'exam': setActiveTab('event'); setEventSubTab('exam'); break;
-                      case 'event': setActiveTab('event'); break;
+                      case 'exam': setActiveTab('event'); break;
+                      case 'schoolbus': setActiveTab('schoolbus'); break;
                       default: break;
                     }
                   };
@@ -832,7 +820,7 @@ export const ParentPortal = ({
                   });
 
                   // Define type order for consistent display
-                  const typeOrder = ['tuition', 'eca', 'trip', 'camp', 'exam', 'event'];
+                  const typeOrder = ['tuition', 'eca', 'trip', 'camp', 'exam', 'schoolbus'];
                   const sortedTypes = typeOrder.filter(type => groupedDeadlines[type]?.length > 0);
 
                   if (mockUpcomingDeadlines.length === 0) {

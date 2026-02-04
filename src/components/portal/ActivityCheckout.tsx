@@ -167,9 +167,11 @@ export const ActivityCheckout = ({
                         method.id === 'alipay' ? 'Alipay' :
                         method.id === 'bank_counter' ? 'Bank Account' : method.name)}
                     </span>
-                    <div className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                      {method.fee === 0 ? t('portal.free') : `+${method.fee}${method.currency}`}
-                    </div>
+                    {method.fee !== 0 && (
+                      <div className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                        +{method.fee}{method.currency}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

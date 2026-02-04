@@ -104,14 +104,14 @@ export const mockUpcomingDeadlines = [
     description: "Exam Registration Deadline"
   },
   {
-    id: "deadline-event-001",
-    type: "event" as const,
-    title: "Science Fair Registration",
+    id: "deadline-schoolbus-001",
+    type: "schoolbus" as const,
+    title: "School Bus Fee - Term 2",
     studentName: "Emma Johnson",
     studentId: 1,
     dueDate: "2024-12-19",
-    amount: 1200,
-    description: "Event Registration Deadline"
+    amount: 18000,
+    description: "School Bus Payment Deadline"
   }
 ];
 
