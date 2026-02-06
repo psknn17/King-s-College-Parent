@@ -125,98 +125,176 @@ export const generateReceiptPDF = (receipt: Receipt, language: string = 'en') =>
   doc.setFont(undefined, 'bold');
   doc.text('RECEIPT', pageWidth / 2, 58, { align: 'center' });
 
-  // Student and Receipt info section (two columns)
-  const infoY = 68;
+  // Student and Receipt info section (two columns with proper spacing)
+  const infoY = 70;
   doc.setFontSize(9);
 
-  // Left column - Student info
+  // Left column - Student info with proper spacing
   doc.setFont(undefined, 'normal');
-  doc.text(`Student ID no.${studentData.id}`, 15, infoY);
-  doc.text(`Student name${studentData.name}`, 15, infoY + 5);
-  doc.text(`Contact name${studentData.contactName}`, 15, infoY + 10);
-  doc.text(`Address`, 15, infoY + 15);
+  const leftLabelX = 15;
+  const leftValueX = 50;
 
-  // Right column - Receipt info
-  doc.text(`Receipt no.${receipt.reference_number}`, pageWidth - 75, infoY, { align: 'right' });
+  doc.text('Student ID no.', leftLabelX, infoY);
+  doc.text(studentData.id, leftValueX, infoY);
+
+  doc.text('Student name', leftLabelX, infoY + 5);
+  doc.text(studentData.name, leftValueX, infoY + 5);
+
+  doc.text('Contact name', leftLabelX, infoY + 10);
+  doc.text(studentData.contactName, leftValueX, infoY + 10);
+
+  doc.text('Address', leftLabelX, infoY + 15);
+
+  // Right column - Receipt info with proper alignment
   const receiptDate = new Date(receipt.paid_at).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'long',
     year: 'numeric'
   });
-  doc.text(`Receipt date${receiptDate}`, pageWidth - 75, infoY + 5, { align: 'right' });
-  doc.text(`Year group${studentData.yearGroup}`, pageWidth - 75, infoY + 10, { align: 'right' });
-  doc.text(`School year${studentData.schoolYear}`, pageWidth - 75, infoY + 15, { align: 'right' });
 
-  // Invoice table
-  const tableY = infoY + 30;
+  const rightLabelX = pageWidth - 90;
+  const rightValueX = pageWidth - 15;
+
+  doc.text('Receipt no.', rightLabelX, infoY);
+  doc.text(receipt.reference_number, rightValueX, infoY, { align: 'right' });
+
+  doc.text('Receipt date', rightLabelX, infoY + 5);
+  doc.text(receiptDate, rightValueX, infoY + 5, { align: 'right' });
+
+  doc.text('Year group', rightLabelX, infoY + 10);
+  doc.text(studentData.yearGroup, rightValueX, infoY + 10, { align: 'right' });
+
+  doc.text('School year', rightLabelX, infoY + 15);
+  doc.text(studentData.schoolYear, rightValueX, infoY + 15, { align: 'right' });
+
+  // Invoice table with better spacing
+  const tableY = infoY + 35;
   doc.setFontSize(8);
 
-  // Table headers
-  doc.setFillColor(255, 255, 255);
-  doc.rect(15, tableY, pageWidth - 30, 8, 'S');
+  // Table headers with borders
+  const colWidths = [15, 40, 35, 30, 30, 30]; // Column widths
+  let currentX = 15;
 
+  // Draw header row background
+  doc.setFillColor(245, 245, 245);
+  doc.rect(15, tableY, pageWidth - 30, 12, 'F');
+  doc.setDrawColor(0, 0, 0);
+  doc.rect(15, tableY, pageWidth - 30, 12, 'S');
+
+  // Draw vertical lines for columns
+  currentX = 15;
+  for (let i = 0; i < colWidths.length; i++) {
+    if (i > 0) {
+      doc.line(currentX, tableY, currentX, tableY + 12);
+    }
+    currentX += colWidths[i];
+  }
+
+  // Header text
   doc.setFont(undefined, 'bold');
-  doc.text('No.', 20, tableY + 5);
-  doc.text('Invoice no.', 35, tableY + 5);
-  doc.text('Invoice date', 80, tableY + 5);
-  doc.text('Invoice amount', 120, tableY + 5);
-  doc.text('Received amount', 150, tableY + 5);
-  doc.text('Outstanding amount', 175, tableY + 5);
-  doc.text('(THB)', 120, tableY + 9);
-  doc.text('(THB)', 152, tableY + 9);
+  doc.text('No.', 18, tableY + 5);
+  doc.text('Invoice no.', 32, tableY + 5);
+  doc.text('Invoice date', 73, tableY + 5);
+  doc.text('Invoice amount', 108, tableY + 5);
+  doc.text('Received amount', 138, tableY + 5);
+  doc.text('Outstanding amount', 168, tableY + 5);
+  doc.setFontSize(7);
+  doc.text('(THB)', 118, tableY + 9);
+  doc.text('(THB)', 148, tableY + 9);
   doc.text('(THB)', 178, tableY + 9);
 
-  // Table row
-  const rowY = tableY + 15;
-  doc.rect(15, tableY + 8, pageWidth - 30, 12, 'S');
+  // Table data row
+  const rowY = tableY + 12;
+  doc.setFontSize(8);
+  doc.rect(15, rowY, pageWidth - 30, 10, 'S');
+
+  // Draw vertical lines for data row
+  currentX = 15;
+  for (let i = 0; i < colWidths.length; i++) {
+    if (i > 0) {
+      doc.line(currentX, rowY, currentX, rowY + 10);
+    }
+    currentX += colWidths[i];
+  }
+
+  // Data
   doc.setFont(undefined, 'normal');
-  doc.text(invoiceData.no.toString(), 20, rowY);
-  doc.text(invoiceData.invoiceNo, 35, rowY);
-  doc.text(invoiceData.invoiceDate, 80, rowY);
-  doc.text(invoiceData.invoiceAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }), 130, rowY, { align: 'right' });
-  doc.text(invoiceData.receivedAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }), 162, rowY, { align: 'right' });
-  doc.text(invoiceData.outstandingAmount === 0 ? '-' : invoiceData.outstandingAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }), 190, rowY, { align: 'right' });
+  doc.text(invoiceData.no.toString(), 22, rowY + 6, { align: 'center' });
+  doc.text(invoiceData.invoiceNo, 32, rowY + 6);
+  doc.text(invoiceData.invoiceDate, 73, rowY + 6);
+  doc.text(invoiceData.invoiceAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }), 133, rowY + 6, { align: 'right' });
+  doc.text(invoiceData.receivedAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }), 163, rowY + 6, { align: 'right' });
+  doc.text(invoiceData.outstandingAmount === 0 ? '-' : invoiceData.outstandingAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }), 193, rowY + 6, { align: 'right' });
 
   // Amount in words and total
-  const totalY = rowY + 10;
+  const totalY = rowY + 17;
+  doc.setFontSize(9);
   doc.setFont(undefined, 'normal');
   const bahtWhole = Math.floor(receipt.amount);
   const satang = Math.round((receipt.amount - bahtWhole) * 100);
   const amountInWords = numberToWords(bahtWhole) + ' BAHT' + (satang > 0 ? ' ' + numberToWords(satang) + ' SATANG' : '') + ' ONLY';
-  doc.text(amountInWords, 15, totalY);
+  doc.text(amountInWords, 20, totalY);
 
   doc.setFont(undefined, 'bold');
-  doc.text('TOTAL', 150, totalY);
-  doc.text(`${receipt.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}-`, 190, totalY, { align: 'right' });
+  doc.setFontSize(10);
+  doc.text('TOTAL', 155, totalY);
+  doc.text(`${receipt.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}-`, 195, totalY, { align: 'right' });
 
-  // Payment method table
+  // Payment method table with better layout
   const paymentTableY = totalY + 10;
-  doc.rect(15, paymentTableY, pageWidth - 30, 8, 'S');
+  const payColWidths = [35, 35, 35, 35, 35];
+
+  // Header row
+  doc.setFillColor(245, 245, 245);
+  doc.rect(15, paymentTableY, pageWidth - 30, 10, 'F');
+  doc.setDrawColor(0, 0, 0);
+  doc.rect(15, paymentTableY, pageWidth - 30, 10, 'S');
+
+  // Vertical lines
+  currentX = 15;
+  for (let i = 0; i < payColWidths.length; i++) {
+    if (i > 0) {
+      doc.line(currentX, paymentTableY, currentX, paymentTableY + 10);
+    }
+    currentX += payColWidths[i];
+  }
+
   doc.setFontSize(8);
   doc.setFont(undefined, 'bold');
-  doc.text('Payment method', 40, paymentTableY + 5);
-  doc.text('Bank name', 75, paymentTableY + 5);
-  doc.text('Bank branch', 110, paymentTableY + 5);
-  doc.text('Cheque no.', 145, paymentTableY + 5);
-  doc.text('Cheque date', 175, paymentTableY + 5);
+  doc.text('Payment method', 32, paymentTableY + 6, { align: 'center' });
+  doc.text('Bank name', 67, paymentTableY + 6, { align: 'center' });
+  doc.text('Bank branch', 102, paymentTableY + 6, { align: 'center' });
+  doc.text('Cheque no.', 137, paymentTableY + 6, { align: 'center' });
+  doc.text('Cheque date', 172, paymentTableY + 6, { align: 'center' });
 
   // Payment data row
-  doc.rect(15, paymentTableY + 8, pageWidth - 30, 8, 'S');
+  const payDataY = paymentTableY + 10;
+  doc.rect(15, payDataY, pageWidth - 30, 10, 'S');
+
+  currentX = 15;
+  for (let i = 0; i < payColWidths.length; i++) {
+    if (i > 0) {
+      doc.line(currentX, payDataY, currentX, payDataY + 10);
+    }
+    currentX += payColWidths[i];
+  }
+
   doc.setFont(undefined, 'normal');
-  doc.text(paymentData.method, 40, paymentTableY + 13);
-  doc.text(paymentData.bankName, 75, paymentTableY + 13);
-  doc.text(paymentData.bankBranch, 110, paymentTableY + 13);
-  doc.text(paymentData.chequeNo, 145, paymentTableY + 13);
-  doc.text(paymentData.chequeDate, 175, paymentTableY + 13);
+  doc.text(paymentData.method, 32, payDataY + 6, { align: 'center' });
+  doc.text(paymentData.bankName, 67, payDataY + 6, { align: 'center' });
+  doc.text(paymentData.bankBranch, 102, payDataY + 6, { align: 'center' });
+  doc.text(paymentData.chequeNo, 137, payDataY + 6, { align: 'center' });
+  doc.text(paymentData.chequeDate, 172, payDataY + 6, { align: 'center' });
 
   // Collector and signature
-  const sigY = paymentTableY + 25;
+  const sigY = paymentTableY + 30;
   doc.setFontSize(9);
-  doc.text('System', 50, sigY);
-  doc.text('Porntip Jansintrangkul', pageWidth - 80, sigY);
+  doc.setFont(undefined, 'normal');
+  doc.text('System', 60, sigY, { align: 'center' });
+  doc.text('Porntip Jansintrangkul', pageWidth - 60, sigY, { align: 'center' });
   doc.setFont(undefined, 'bold');
-  doc.text('Collector', 50, sigY + 5);
-  doc.text('Authorised signature', pageWidth - 80, sigY + 5);
+  doc.text('Collector', 60, sigY + 5, { align: 'center' });
+  doc.text('Authorised signature', pageWidth - 60, sigY + 5, { align: 'center' });
 
   // Disclaimer
   doc.setFontSize(7);
