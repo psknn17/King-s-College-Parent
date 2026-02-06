@@ -6,6 +6,7 @@ import { toast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { PaymentProgressBar } from "./PaymentProgressBar";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { generateReceiptPDF } from "@/utils/pdfGenerator";
 
 interface ActivityPaymentSuccessProps {
   studentName: string;
@@ -41,10 +42,46 @@ export const ActivityPaymentSuccess = ({ studentName, paymentData, onBackToMain,
   };
 
   const handleDownloadReceipt = () => {
-    toast({
-      title: language === 'th' ? 'ดาวน์โหลดใบเสร็จ' : language === 'zh' ? '下载收据' : 'Download Receipt',
-      description: language === 'th' ? 'เริ่มดาวน์โหลดแล้ว' : language === 'zh' ? '下载已开始' : 'Download started',
-    });
+    try {
+      // Map payment method to the format expected by PDF generator
+      const paymentMethodMap: Record<string, 'credit_card' | 'bank_transfer' | 'credit_note' | 'cash'> = {
+        'Credit Card': 'credit_card',
+        'Bank Transfer': 'bank_transfer',
+        'Credit Note': 'credit_note',
+        'Cash': 'cash',
+        'PromptPay': 'bank_transfer',
+        'WeChat Pay': 'bank_transfer',
+        'Alipay': 'bank_transfer',
+      };
+
+      // Create receipt object for PDF generation
+      const receiptData = {
+        id: paymentData.receiptId,
+        invoice_id: `INV-${paymentData.receiptId.split('-')[1]}`,
+        amount: paymentData.amount,
+        payment_method: paymentMethodMap[paymentData.paymentMethod] || 'bank_transfer',
+        paid_at: paymentData.paymentDate,
+        receipt_url: '',
+        status: 'completed' as const,
+        description: paymentData.items.map(item => item.name).join(', '),
+        reference_number: paymentData.receiptId,
+      };
+
+      // Generate PDF
+      generateReceiptPDF(receiptData, language);
+
+      toast({
+        title: language === 'th' ? 'ดาวน์โหลดสำเร็จ' : language === 'zh' ? '下载成功' : 'Download Successful',
+        description: language === 'th' ? 'ดาวน์โหลดใบเสร็จ PDF เรียบร้อยแล้ว' : language === 'zh' ? '收据 PDF 已下载' : 'Receipt PDF has been downloaded successfully',
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: language === 'th' ? 'เกิดข้อผิดพลาด' : language === 'zh' ? '错误' : 'Error',
+        description: language === 'th' ? 'ไม่สามารถดาวน์โหลดใบเสร็จได้ กรุณาลองใหม่อีกครั้ง' : language === 'zh' ? '无法下载收据，请重试' : 'Unable to download receipt. Please try again',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getActivityTypeText = () => {
