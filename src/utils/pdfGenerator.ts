@@ -16,49 +16,52 @@ export const generateReceiptPDF = (receipt: Receipt, language: string = 'en') =>
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // Colors
-  const primaryColor = '#4F46E5'; // Indigo
-  const textColor = '#1F2937'; // Gray-800
-  const lightGray = '#F3F4F6'; // Gray-100
+  // Colors - Updated to match new design
+  const primaryColor = [91, 95, 249]; // Blue/Purple #5B5FF9
+  const textColor = [31, 41, 55]; // Gray-800
+  const lightGray = [245, 245, 245]; // #F5F5F5
+  const greenColor = [34, 197, 94]; // Green for COMPLETED
 
-  // Header
-  doc.setFillColor(primaryColor);
-  doc.rect(0, 0, pageWidth, 40, 'F');
+  // Header - Larger and more prominent
+  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.rect(0, 0, pageWidth, 50, 'F');
 
-  // Title
+  // Title - Larger font
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
-  doc.text("King's College", pageWidth / 2, 20, { align: 'center' });
-  doc.setFontSize(14);
+  doc.setFontSize(32);
+  doc.setFont(undefined, 'bold');
+  doc.text("King's College", pageWidth / 2, 25, { align: 'center' });
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'normal');
   doc.text(
     language === 'th' ? 'ใบเสร็จรับเงิน' : language === 'zh' ? '收据' : 'Payment Receipt',
     pageWidth / 2,
-    32,
+    40,
     { align: 'center' }
   );
 
   // Reset text color
-  doc.setTextColor(textColor);
+  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
 
-  // Receipt Info Box
-  const startY = 55;
-  doc.setFillColor(lightGray);
-  doc.rect(15, startY, pageWidth - 30, 40, 'F');
+  // Receipt Info Box - Cleaner design
+  const startY = 65;
+  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
+  doc.rect(20, startY, pageWidth - 40, 45, 'F');
 
-  // Receipt details
-  doc.setFontSize(10);
+  // Receipt details - Cleaner spacing
+  doc.setFontSize(11);
   doc.setFont(undefined, 'bold');
-  doc.text('Receipt Number:', 20, startY + 10);
+  doc.text('Receipt Number:', 30, startY + 15);
   doc.setFont(undefined, 'normal');
-  doc.text(receipt.reference_number, 70, startY + 10);
+  doc.text(receipt.reference_number, 100, startY + 15);
 
   doc.setFont(undefined, 'bold');
-  doc.text('Invoice ID:', 20, startY + 20);
+  doc.text('Invoice ID:', 30, startY + 25);
   doc.setFont(undefined, 'normal');
-  doc.text(receipt.invoice_id, 70, startY + 20);
+  doc.text(receipt.invoice_id, 100, startY + 25);
 
   doc.setFont(undefined, 'bold');
-  doc.text('Date:', 20, startY + 30);
+  doc.text('Date:', 30, startY + 35);
   doc.setFont(undefined, 'normal');
   const formattedDate = new Date(receipt.paid_at).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -67,25 +70,25 @@ export const generateReceiptPDF = (receipt: Receipt, language: string = 'en') =>
     hour: '2-digit',
     minute: '2-digit'
   });
-  doc.text(formattedDate, 70, startY + 30);
+  doc.text(formattedDate, 100, startY + 35);
 
   // Description section
-  const descY = startY + 50;
+  const descY = startY + 60;
   doc.setFontSize(12);
   doc.setFont(undefined, 'bold');
-  doc.text('Description:', 20, descY);
+  doc.text('Description:', 30, descY);
   doc.setFont(undefined, 'normal');
   doc.setFontSize(11);
-  doc.text(receipt.description, 20, descY + 8);
+  doc.text(receipt.description, 30, descY + 10);
 
-  // Payment details
-  const paymentY = descY + 25;
-  doc.setFillColor(lightGray);
-  doc.rect(15, paymentY, pageWidth - 30, 30, 'F');
+  // Payment details box
+  const paymentY = descY + 30;
+  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
+  doc.rect(20, paymentY, pageWidth - 40, 30, 'F');
 
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont(undefined, 'bold');
-  doc.text('Payment Method:', 20, paymentY + 10);
+  doc.text('Payment Method:', 30, paymentY + 12);
   doc.setFont(undefined, 'normal');
   const paymentMethodLabels = {
     credit_card: 'Credit Card',
@@ -93,34 +96,51 @@ export const generateReceiptPDF = (receipt: Receipt, language: string = 'en') =>
     credit_note: 'Credit Note',
     cash: 'Cash'
   };
-  doc.text(paymentMethodLabels[receipt.payment_method], 70, paymentY + 10);
+  doc.text(paymentMethodLabels[receipt.payment_method], 100, paymentY + 12);
 
   doc.setFont(undefined, 'bold');
-  doc.text('Status:', 20, paymentY + 20);
+  doc.text('Status:', 30, paymentY + 22);
   doc.setFont(undefined, 'normal');
-  doc.setTextColor(receipt.status === 'completed' ? '#10B981' : '#EF4444');
-  doc.text(receipt.status.toUpperCase(), 70, paymentY + 20);
-  doc.setTextColor(textColor);
 
-  // Amount section
-  const amountY = paymentY + 45;
-  doc.setDrawColor(primaryColor);
-  doc.setLineWidth(0.5);
-  doc.line(15, amountY, pageWidth - 15, amountY);
+  // Green color for COMPLETED status
+  if (receipt.status === 'completed') {
+    doc.setTextColor(greenColor[0], greenColor[1], greenColor[2]);
+  } else {
+    doc.setTextColor(239, 68, 68); // Red
+  }
+  doc.text(receipt.status.toUpperCase(), 100, paymentY + 22);
+  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
 
+  // Amount section with blue separator lines
+  const amountY = paymentY + 50;
+  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setLineWidth(1);
+  doc.line(20, amountY, pageWidth - 20, amountY);
+
+  // Total Amount with large blue number
   doc.setFontSize(14);
   doc.setFont(undefined, 'bold');
-  doc.text('Total Amount:', 20, amountY + 15);
-  doc.setTextColor(primaryColor);
-  doc.setFontSize(18);
-  const formattedAmount = new Intl.NumberFormat('th-TH', {
-    style: 'currency',
-    currency: 'THB'
-  }).format(receipt.amount);
-  doc.text(formattedAmount, pageWidth - 20, amountY + 15, { align: 'right' });
+  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+  doc.text('Total Amount:', 30, amountY + 18);
 
-  doc.setTextColor(textColor);
-  doc.line(15, amountY + 22, pageWidth - 15, amountY + 22);
+  // Large blue amount - numbers only, no currency symbol
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setFontSize(24);
+  doc.setFont(undefined, 'bold');
+
+  // Format amount - just numbers with commas, no currency prefix
+  const formattedAmount = receipt.amount.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
+  doc.text(formattedAmount, pageWidth - 30, amountY + 18, { align: 'right' });
+
+  // Bottom blue line
+  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setLineWidth(1);
+  doc.line(20, amountY + 28, pageWidth - 20, amountY + 28);
 
   // Footer
   doc.setFontSize(9);
