@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,34 +10,67 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChevronDown } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-// Mock student data
-const mockStudents = [
-  { id: 1, name: "Emma Johnson", class: "Grade 5A", year: "2024" },
-  { id: 2, name: "Liam Johnson", class: "Grade 8B", year: "2024" },
-  { id: 3, name: "Sophia Johnson", class: "Grade 11C", year: "2024" },
-];
-
 const getInitials = (name: string) => {
   return name.split(' ').map(word => word[0]).join('').toUpperCase();
 };
 
-interface StudentSelectorProps {
-  onStudentChange?: (student: typeof mockStudents[0]) => void;
+interface Student {
+  id: number;
+  name: string;
+  class: string;
+  year: string;
+  campus?: string;
+  isSISB?: boolean;
 }
 
-export const StudentSelector = ({ onStudentChange }: StudentSelectorProps) => {
-  const [selectedStudent, setSelectedStudent] = useState(mockStudents[0]);
+interface StudentSelectorProps {
+  students: Student[];
+  initialStudentId?: number;
+  onStudentChange?: (student: Student) => void;
+}
+
+export const StudentSelector = ({
+  students,
+  initialStudentId,
+  onStudentChange
+}: StudentSelectorProps) => {
+  const [selectedStudent, setSelectedStudent] = useState<Student>(
+    students.find(s => s.id === initialStudentId) || students[0]
+  );
   const { t, language } = useLanguage();
 
-  const handleStudentChange = (student: typeof mockStudents[0]) => {
+  // Update selected student if initialStudentId changes
+  useEffect(() => {
+    if (initialStudentId) {
+      const student = students.find(s => s.id === initialStudentId);
+      if (student) {
+        setSelectedStudent(student);
+      }
+    }
+  }, [initialStudentId, students]);
+
+  const handleStudentChange = (student: Student) => {
     setSelectedStudent(student);
+
+    // Trigger the callback to update parent component
+    // This will update all portal data (invoices, courses, trips, etc.)
+    // based on the selected student's ID
     onStudentChange?.(student);
-    // TODO: Update all portal data based on selected student
-    // await fetchStudentData(student.id);
   };
 
+  // If no students, show placeholder
+  if (!students || students.length === 0) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg">
+        <div className={`text-sm text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+          {language === 'th' ? 'ไม่พบข้อมูลนักเรียน' : language === 'zh' ? '找不到学生数据' : 'No students found'}
+        </div>
+      </div>
+    );
+  }
+
   // If only one student, show simple display
-  if (mockStudents.length === 1) {
+  if (students.length === 1) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg">
         <Avatar className="h-8 w-8">
@@ -70,7 +103,7 @@ export const StudentSelector = ({ onStudentChange }: StudentSelectorProps) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56 bg-background/95 backdrop-blur-sm border">
-        {mockStudents.map((student) => (
+        {students.map((student) => (
           <DropdownMenuItem
             key={student.id}
             onClick={() => handleStudentChange(student)}
@@ -95,3 +128,5 @@ export const StudentSelector = ({ onStudentChange }: StudentSelectorProps) => {
     </DropdownMenu>
   );
 };
+
+export type { Student };

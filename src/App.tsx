@@ -10,6 +10,8 @@ import { TripCartPage } from "./pages/TripCart";
 import { CheckoutPage } from "./pages/Checkout";
 import { ActivityPaymentSuccess } from "./components/portal/ActivityPaymentSuccess";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { PaymentErrorBoundary } from "./components/PaymentErrorBoundary";
 import { mockCreditNotes } from "./data/mockData";
 import { TripCartItem } from "./components/portal/TripCartView";
 
@@ -161,91 +163,95 @@ const App = () => {
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <LanguageProvider>
-          <Toaster />
-          <Sonner />
-          {!isLoggedIn ? (
-            <Login onLogin={handleLogin} />
-          ) : currentPage === 'portal' ? (
-            <ParentPortal 
-              onLogout={handleLogout} 
-              onGoToCart={handleGoToCart}
-              onGoToCheckout={handleGoToCheckout}
-              onGoToTripCart={handleGoToTripCart}
-              cartItems={cartItems}
-              onAddToCart={handleAddToCart}
-              onRemoveFromCart={handleRemoveFromCart}
-              isInCart={isInCart}
-              showCountdown={showCountdown}
-              onCountdownExpired={handleCountdownExpired}
-              onCancelCountdown={handleCancelCountdown}
-            />
-          ) : currentPage === 'cart' ? (
-            <CartPage 
-              items={cartItems}
-              creditNotes={mockCreditNotes}
-              onRemoveItem={(itemId: string) => {
-                const itemToRemove = cartItems.find(item => item.id === itemId);
-                if (itemToRemove) {
-                  handleRemoveFromCart(itemId, itemToRemove.studentId);
-                }
-              }}
-              onCheckout={(items: any[], selectedCreditNotes: any[], totalCreditApplied: number) =>
-                handleGoToCheckout({
-                  type: 'activities',
-                  items,
-                  selectedCreditNotes,
-                  totalCreditApplied
-                })
-              }
-              onBackToPortal={handleBackToPortal}
-            />
-          ) : currentPage === 'tripCart' ? (
-            <TripCartPage 
-              items={tripCartItems}
-              onRemoveItem={handleRemoveTripFromCart}
-              onCheckout={handleTripCheckout}
-              onBackToPortal={handleBackToPortal}
-            />
-          ) : currentPage === 'checkout' || currentPage === 'tripCheckout' ? (
-            <CheckoutPage
-              type={checkoutData?.type || 'activities'}
-              invoice={checkoutData?.invoice}
-              items={checkoutData?.items || cartItems}
-              creditBalance={1500}
-              selectedCreditNotes={checkoutData?.selectedCreditNotes || []}
-              totalCreditApplied={checkoutData?.totalCreditApplied || 0}
-              onPaymentSuccess={handlePaymentSuccess}
-              onCancel={
-                checkoutData?.type === 'trips' 
-                  ? handleBackToTripCart 
-                  : checkoutData?.type === 'activities' 
-                    ? handleBackToCart 
-                    : handleBackToPortal
-              }
-              onRemoveItem={(itemId: string) => {
-                if (checkoutData?.type === 'trips') {
-                  handleRemoveTripFromCart(itemId);
-                } else if (checkoutData?.type === 'activities') {
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <LanguageProvider>
+            <Toaster />
+            <Sonner />
+            {!isLoggedIn ? (
+              <Login onLogin={handleLogin} />
+            ) : currentPage === 'portal' ? (
+              <ParentPortal
+                onLogout={handleLogout}
+                onGoToCart={handleGoToCart}
+                onGoToCheckout={handleGoToCheckout}
+                onGoToTripCart={handleGoToTripCart}
+                cartItems={cartItems}
+                onAddToCart={handleAddToCart}
+                onRemoveFromCart={handleRemoveFromCart}
+                isInCart={isInCart}
+                showCountdown={showCountdown}
+                onCountdownExpired={handleCountdownExpired}
+                onCancelCountdown={handleCancelCountdown}
+              />
+            ) : currentPage === 'cart' ? (
+              <CartPage
+                items={cartItems}
+                creditNotes={mockCreditNotes}
+                onRemoveItem={(itemId: string) => {
                   const itemToRemove = cartItems.find(item => item.id === itemId);
                   if (itemToRemove) {
                     handleRemoveFromCart(itemId, itemToRemove.studentId);
                   }
+                }}
+                onCheckout={(items: any[], selectedCreditNotes: any[], totalCreditApplied: number) =>
+                  handleGoToCheckout({
+                    type: 'activities',
+                    items,
+                    selectedCreditNotes,
+                    totalCreditApplied
+                  })
                 }
-              }}
-            />
-          ) : currentPage === 'success' && paymentSuccessData ? (
-            <ActivityPaymentSuccess
-              studentName={paymentSuccessData.studentName || "นักเรียน"}
-              paymentData={paymentSuccessData}
-              onBackToMain={handleBackToDashboard}
-            />
-          ) : null}
-        </LanguageProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+                onBackToPortal={handleBackToPortal}
+              />
+            ) : currentPage === 'tripCart' ? (
+              <TripCartPage
+                items={tripCartItems}
+                onRemoveItem={handleRemoveTripFromCart}
+                onCheckout={handleTripCheckout}
+                onBackToPortal={handleBackToPortal}
+              />
+            ) : currentPage === 'checkout' || currentPage === 'tripCheckout' ? (
+              <PaymentErrorBoundary>
+                <CheckoutPage
+                  type={checkoutData?.type || 'activities'}
+                  invoice={checkoutData?.invoice}
+                  items={checkoutData?.items || cartItems}
+                  creditBalance={1500}
+                  selectedCreditNotes={checkoutData?.selectedCreditNotes || []}
+                  totalCreditApplied={checkoutData?.totalCreditApplied || 0}
+                  onPaymentSuccess={handlePaymentSuccess}
+                  onCancel={
+                    checkoutData?.type === 'trips'
+                      ? handleBackToTripCart
+                      : checkoutData?.type === 'activities'
+                        ? handleBackToCart
+                        : handleBackToPortal
+                  }
+                  onRemoveItem={(itemId: string) => {
+                    if (checkoutData?.type === 'trips') {
+                      handleRemoveTripFromCart(itemId);
+                    } else if (checkoutData?.type === 'activities') {
+                      const itemToRemove = cartItems.find(item => item.id === itemId);
+                      if (itemToRemove) {
+                        handleRemoveFromCart(itemId, itemToRemove.studentId);
+                      }
+                    }
+                  }}
+                />
+              </PaymentErrorBoundary>
+            ) : currentPage === 'success' && paymentSuccessData ? (
+              <ActivityPaymentSuccess
+                studentName={paymentSuccessData.studentName || "นักเรียน"}
+                paymentData={paymentSuccessData}
+                onBackToMain={handleBackToDashboard}
+              />
+            ) : null}
+          </LanguageProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 

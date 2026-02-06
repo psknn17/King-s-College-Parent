@@ -58,6 +58,7 @@ import {
   ShoppingCart
 } from "lucide-react";
 import { mockStudents, getMockDataForStudent, mockInvoices, mockECAInvoices, mockTripInvoices, mockExamInvoices, mockSchoolBusInvoices, mockCreditNotes, mockReceipts, campusList, mandatoryCourses, mockEventActivitiesData, mockCreditNoteHistory, mockUpcomingDeadlines } from "@/data/mockData";
+import { generateReceiptPDF } from "@/utils/pdfGenerator";
 import { CreditNoteHistory } from "@/components/portal/CreditNoteHistory";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -341,11 +342,40 @@ export const ParentPortal = ({
   };
 
   const handleDownloadReceipt = (receiptId: string) => {
-    // TODO: Implement PDF download
-    toast({
-      title: t('payment.downloadReceipt'),
-      description: t('payment.downloadStarted'),
-    });
+    try {
+      const receipt = allReceipts.find(r => r.id === receiptId);
+      if (!receipt) {
+        toast({
+          title: language === 'th' ? 'ไม่พบใบเสร็จ' : 'Receipt Not Found',
+          description: language === 'th' ? 'ไม่พบใบเสร็จที่ต้องการดาวน์โหลด' : 'The requested receipt could not be found',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      if (receipt.status !== 'completed') {
+        toast({
+          title: language === 'th' ? 'ไม่สามารถดาวน์โหลดได้' : 'Cannot Download',
+          description: language === 'th' ? 'สามารถดาวน์โหลดได้เฉพาะใบเสร็จที่ชำระเงินสำเร็จแล้วเท่านั้น' : 'Only completed receipts can be downloaded',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      generateReceiptPDF(receipt, language);
+
+      toast({
+        title: language === 'th' ? 'ดาวน์โหลดสำเร็จ' : language === 'zh' ? '下载成功' : 'Download Successful',
+        description: language === 'th' ? 'ดาวน์โหลดใบเสร็จ PDF เรียบร้อยแล้ว' : language === 'zh' ? '收据 PDF 已下载' : 'Receipt PDF has been downloaded successfully',
+      });
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      toast({
+        title: language === 'th' ? 'เกิดข้อผิดพลาด' : language === 'zh' ? '错误' : 'Error',
+        description: language === 'th' ? 'ไม่สามารถดาวน์โหลดใบเสร็จได้ กรุณาลองใหม่อีกครั้ง' : language === 'zh' ? '无法下载收据，请重试' : 'Unable to download receipt. Please try again',
+        variant: 'destructive',
+      });
+    }
   };
   
   // Filter functions for search
