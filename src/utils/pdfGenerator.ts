@@ -12,158 +12,221 @@ interface Receipt {
   reference_number: string;
 }
 
+// Helper function to convert number to words
+const numberToWords = (num: number): string => {
+  const ones = ['', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE'];
+  const tens = ['', '', 'TWENTY', 'THIRTY', 'FORTY', 'FIFTY', 'SIXTY', 'SEVENTY', 'EIGHTY', 'NINETY'];
+  const teens = ['TEN', 'ELEVEN', 'TWELVE', 'THIRTEEN', 'FOURTEEN', 'FIFTEEN', 'SIXTEEN', 'SEVENTEEN', 'EIGHTEEN', 'NINETEEN'];
+
+  if (num === 0) return 'ZERO';
+
+  const convertLessThanThousand = (n: number): string => {
+    if (n === 0) return '';
+    if (n < 10) return ones[n];
+    if (n < 20) return teens[n - 10];
+    if (n < 100) {
+      return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+    }
+    return ones[Math.floor(n / 100)] + ' HUNDRED' + (n % 100 !== 0 ? ' ' + convertLessThanThousand(n % 100) : '');
+  };
+
+  let result = '';
+  const billion = Math.floor(num / 1000000000);
+  const million = Math.floor((num % 1000000000) / 1000000);
+  const thousand = Math.floor((num % 1000000) / 1000);
+  const remainder = num % 1000;
+
+  if (billion > 0) result += convertLessThanThousand(billion) + ' BILLION ';
+  if (million > 0) result += convertLessThanThousand(million) + ' MILLION ';
+  if (thousand > 0) result += convertLessThanThousand(thousand) + ' THOUSAND ';
+  if (remainder > 0) result += convertLessThanThousand(remainder);
+
+  return result.trim();
+};
+
 export const generateReceiptPDF = (receipt: Receipt, language: string = 'en') => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Colors - Updated to match new design
-  const primaryColor = [91, 95, 249]; // Blue/Purple #5B5FF9
-  const textColor = [31, 41, 55]; // Gray-800
-  const lightGray = [245, 245, 245]; // #F5F5F5
-  const greenColor = [34, 197, 94]; // Green for COMPLETED
+  // Colors
+  const black = [0, 0, 0];
+  const gray = [128, 128, 128];
 
-  // Header - Larger and more prominent
-  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.rect(0, 0, pageWidth, 50, 'F');
+  // Hardcoded data
+  const schoolData = {
+    name: "King's College",
+    location: 'BANGKOK',
+    address: '727 Ratchadapisek Road, Bang Phongphang, Yannawa, Bangkok 10120, Thailand',
+    phone: '+66 (0) 2481 9955',
+    email: 'finance@kingsbangkok.ac.th',
+    website: 'www.kingsbangkok.ac.th'
+  };
 
-  // Title - Larger font
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(32);
+  const studentData = {
+    id: 'KC2025277',
+    name: 'Harper Black',
+    contactName: 'David Black',
+    address: '',
+    yearGroup: 'Year 7',
+    schoolYear: '2025-2026'
+  };
+
+  const invoiceData = {
+    no: 1,
+    invoiceNo: receipt.invoice_id,
+    invoiceDate: new Date(receipt.paid_at).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    }),
+    invoiceAmount: receipt.amount,
+    receivedAmount: receipt.amount,
+    outstandingAmount: 0
+  };
+
+  const paymentData = {
+    method: receipt.payment_method === 'bank_transfer' ? 'bank-transfer' : receipt.payment_method,
+    bankName: '-',
+    bankBranch: '-',
+    chequeNo: '-',
+    chequeDate: '-'
+  };
+
+  // Start drawing PDF
+  doc.setTextColor(black[0], black[1], black[2]);
+
+  // Logo placeholder (using text)
+  doc.setFontSize(10);
   doc.setFont(undefined, 'bold');
-  doc.text("King's College", pageWidth / 2, 25, { align: 'center' });
-  doc.setFontSize(16);
+  doc.text("King's College", pageWidth / 2, 20, { align: 'center' });
+  doc.setFontSize(8);
   doc.setFont(undefined, 'normal');
-  doc.text(
-    language === 'th' ? 'ใบเสร็จรับเงิน' : language === 'zh' ? '收据' : 'Payment Receipt',
-    pageWidth / 2,
-    40,
-    { align: 'center' }
-  );
+  doc.text('INTERNATIONAL SCHOOL', pageWidth / 2, 25, { align: 'center' });
 
-  // Reset text color
-  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-
-  // Receipt Info Box - Cleaner design
-  const startY = 65;
-  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-  doc.rect(20, startY, pageWidth - 40, 45, 'F');
-
-  // Receipt details - Cleaner spacing
-  doc.setFontSize(11);
-  doc.setFont(undefined, 'bold');
-  doc.text('Receipt Number:', 30, startY + 15);
-  doc.setFont(undefined, 'normal');
-  doc.text(receipt.reference_number, 100, startY + 15);
-
-  doc.setFont(undefined, 'bold');
-  doc.text('Invoice ID:', 30, startY + 25);
-  doc.setFont(undefined, 'normal');
-  doc.text(receipt.invoice_id, 100, startY + 25);
-
-  doc.setFont(undefined, 'bold');
-  doc.text('Date:', 30, startY + 35);
-  doc.setFont(undefined, 'normal');
-  const formattedDate = new Date(receipt.paid_at).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-  doc.text(formattedDate, 100, startY + 35);
-
-  // Description section
-  const descY = startY + 60;
+  // Location
   doc.setFontSize(12);
   doc.setFont(undefined, 'bold');
-  doc.text('Description:', 30, descY);
+  doc.text(schoolData.location, pageWidth / 2, 35, { align: 'center' });
+
+  // Address and contact
+  doc.setFontSize(8);
   doc.setFont(undefined, 'normal');
-  doc.setFontSize(11);
-  doc.text(receipt.description, 30, descY + 10);
+  doc.text(schoolData.address, pageWidth / 2, 42, { align: 'center' });
+  doc.text(
+    `${schoolData.phone}, ${schoolData.email}, ${schoolData.website}`,
+    pageWidth / 2,
+    47,
+    { align: 'center' }
+  );
 
-  // Payment details box
-  const paymentY = descY + 30;
-  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
-  doc.rect(20, paymentY, pageWidth - 40, 30, 'F');
-
-  doc.setFontSize(11);
+  // RECEIPT header
+  doc.setFontSize(16);
   doc.setFont(undefined, 'bold');
-  doc.text('Payment Method:', 30, paymentY + 12);
-  doc.setFont(undefined, 'normal');
-  const paymentMethodLabels = {
-    credit_card: 'Credit Card',
-    bank_transfer: 'Bank Transfer',
-    credit_note: 'Credit Note',
-    cash: 'Cash'
-  };
-  doc.text(paymentMethodLabels[receipt.payment_method], 100, paymentY + 12);
+  doc.text('RECEIPT', pageWidth / 2, 58, { align: 'center' });
 
-  doc.setFont(undefined, 'bold');
-  doc.text('Status:', 30, paymentY + 22);
-  doc.setFont(undefined, 'normal');
-
-  // Green color for COMPLETED status
-  if (receipt.status === 'completed') {
-    doc.setTextColor(greenColor[0], greenColor[1], greenColor[2]);
-  } else {
-    doc.setTextColor(239, 68, 68); // Red
-  }
-  doc.text(receipt.status.toUpperCase(), 100, paymentY + 22);
-  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-
-  // Amount section with blue separator lines
-  const amountY = paymentY + 50;
-  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.setLineWidth(1);
-  doc.line(20, amountY, pageWidth - 20, amountY);
-
-  // Total Amount with large blue number
-  doc.setFontSize(14);
-  doc.setFont(undefined, 'bold');
-  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-  doc.text('Total Amount:', 30, amountY + 18);
-
-  // Large blue amount - numbers only, no currency symbol
-  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.setFontSize(24);
-  doc.setFont(undefined, 'bold');
-
-  // Format amount - just numbers with commas, no currency prefix
-  const formattedAmount = receipt.amount.toLocaleString('en-US', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-
-  doc.text(formattedAmount, pageWidth - 30, amountY + 18, { align: 'right' });
-
-  // Bottom blue line
-  doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.setLineWidth(1);
-  doc.line(20, amountY + 28, pageWidth - 20, amountY + 28);
-
-  // Footer
+  // Student and Receipt info section (two columns)
+  const infoY = 68;
   doc.setFontSize(9);
+
+  // Left column - Student info
   doc.setFont(undefined, 'normal');
-  doc.setTextColor(128, 128, 128);
-  const footerY = doc.internal.pageSize.getHeight() - 30;
+  doc.text(`Student ID no.${studentData.id}`, 15, infoY);
+  doc.text(`Student name${studentData.name}`, 15, infoY + 5);
+  doc.text(`Contact name${studentData.contactName}`, 15, infoY + 10);
+  doc.text(`Address`, 15, infoY + 15);
+
+  // Right column - Receipt info
+  doc.text(`Receipt no.${receipt.reference_number}`, pageWidth - 75, infoY, { align: 'right' });
+  const receiptDate = new Date(receipt.paid_at).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+  doc.text(`Receipt date${receiptDate}`, pageWidth - 75, infoY + 5, { align: 'right' });
+  doc.text(`Year group${studentData.yearGroup}`, pageWidth - 75, infoY + 10, { align: 'right' });
+  doc.text(`School year${studentData.schoolYear}`, pageWidth - 75, infoY + 15, { align: 'right' });
+
+  // Invoice table
+  const tableY = infoY + 30;
+  doc.setFontSize(8);
+
+  // Table headers
+  doc.setFillColor(255, 255, 255);
+  doc.rect(15, tableY, pageWidth - 30, 8, 'S');
+
+  doc.setFont(undefined, 'bold');
+  doc.text('No.', 20, tableY + 5);
+  doc.text('Invoice no.', 35, tableY + 5);
+  doc.text('Invoice date', 80, tableY + 5);
+  doc.text('Invoice amount', 120, tableY + 5);
+  doc.text('Received amount', 150, tableY + 5);
+  doc.text('Outstanding amount', 175, tableY + 5);
+  doc.text('(THB)', 120, tableY + 9);
+  doc.text('(THB)', 152, tableY + 9);
+  doc.text('(THB)', 178, tableY + 9);
+
+  // Table row
+  const rowY = tableY + 15;
+  doc.rect(15, tableY + 8, pageWidth - 30, 12, 'S');
+  doc.setFont(undefined, 'normal');
+  doc.text(invoiceData.no.toString(), 20, rowY);
+  doc.text(invoiceData.invoiceNo, 35, rowY);
+  doc.text(invoiceData.invoiceDate, 80, rowY);
+  doc.text(invoiceData.invoiceAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }), 130, rowY, { align: 'right' });
+  doc.text(invoiceData.receivedAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }), 162, rowY, { align: 'right' });
+  doc.text(invoiceData.outstandingAmount === 0 ? '-' : invoiceData.outstandingAmount.toLocaleString('en-US', { minimumFractionDigits: 2 }), 190, rowY, { align: 'right' });
+
+  // Amount in words and total
+  const totalY = rowY + 10;
+  doc.setFont(undefined, 'normal');
+  const bahtWhole = Math.floor(receipt.amount);
+  const satang = Math.round((receipt.amount - bahtWhole) * 100);
+  const amountInWords = numberToWords(bahtWhole) + ' BAHT' + (satang > 0 ? ' ' + numberToWords(satang) + ' SATANG' : '') + ' ONLY';
+  doc.text(amountInWords, 15, totalY);
+
+  doc.setFont(undefined, 'bold');
+  doc.text('TOTAL', 150, totalY);
+  doc.text(`${receipt.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}-`, 190, totalY, { align: 'right' });
+
+  // Payment method table
+  const paymentTableY = totalY + 10;
+  doc.rect(15, paymentTableY, pageWidth - 30, 8, 'S');
+  doc.setFontSize(8);
+  doc.setFont(undefined, 'bold');
+  doc.text('Payment method', 40, paymentTableY + 5);
+  doc.text('Bank name', 75, paymentTableY + 5);
+  doc.text('Bank branch', 110, paymentTableY + 5);
+  doc.text('Cheque no.', 145, paymentTableY + 5);
+  doc.text('Cheque date', 175, paymentTableY + 5);
+
+  // Payment data row
+  doc.rect(15, paymentTableY + 8, pageWidth - 30, 8, 'S');
+  doc.setFont(undefined, 'normal');
+  doc.text(paymentData.method, 40, paymentTableY + 13);
+  doc.text(paymentData.bankName, 75, paymentTableY + 13);
+  doc.text(paymentData.bankBranch, 110, paymentTableY + 13);
+  doc.text(paymentData.chequeNo, 145, paymentTableY + 13);
+  doc.text(paymentData.chequeDate, 175, paymentTableY + 13);
+
+  // Collector and signature
+  const sigY = paymentTableY + 25;
+  doc.setFontSize(9);
+  doc.text('System', 50, sigY);
+  doc.text('Porntip Jansintrangkul', pageWidth - 80, sigY);
+  doc.setFont(undefined, 'bold');
+  doc.text('Collector', 50, sigY + 5);
+  doc.text('Authorised signature', pageWidth - 80, sigY + 5);
+
+  // Disclaimer
+  doc.setFontSize(7);
+  doc.setFont(undefined, 'italic');
+  doc.setTextColor(gray[0], gray[1], gray[2]);
   doc.text(
-    "King's College Parent Portal",
+    'In case of payment made by cheque, this receipt will not be valid until the cheque has been honoured by the bank.',
     pageWidth / 2,
-    footerY,
-    { align: 'center' }
-  );
-  doc.text(
-    'This is an official receipt generated by the King\'s College payment system.',
-    pageWidth / 2,
-    footerY + 5,
-    { align: 'center' }
-  );
-  doc.text(
-    `Generated on: ${new Date().toLocaleString('en-US')}`,
-    pageWidth / 2,
-    footerY + 10,
-    { align: 'center' }
+    sigY + 15,
+    { align: 'center', maxWidth: pageWidth - 30 }
   );
 
   // Download the PDF
