@@ -271,6 +271,10 @@ const translations = {
     'invoice.amountDue': 'Amount Due',
     'invoice.availableCredit': 'Available Credit',
     'invoice.canPayWithCredit': 'Can be paid with available credit',
+    'invoice.unpaidInvoices': 'Unpaid Invoices',
+    'invoice.paidInvoices': 'Paid Invoices',
+    'invoice.noUnpaidInvoices': 'No unpaid invoices',
+    'invoice.noPaidInvoices': 'No payment history yet',
     
     // Payment Success
     'payment.success': 'Payment Successful',
@@ -713,6 +717,10 @@ const translations = {
     'invoice.amountDue': 'จำนวนเงินที่ต้องชำระ',
     'invoice.availableCredit': 'เครดิตที่มีอยู่',
     'invoice.canPayWithCredit': 'สามารถชำระด้วยเครดิตที่มีอยู่ได้',
+    'invoice.unpaidInvoices': 'ใบแจ้งหนี้ที่ยังไม่ได้ชำระ',
+    'invoice.paidInvoices': 'ใบแจ้งหนี้ที่ชำระแล้ว',
+    'invoice.noUnpaidInvoices': 'ไม่มีใบแจ้งหนี้ที่ค้างชำระ',
+    'invoice.noPaidInvoices': 'ยังไม่มีประวัติการชำระเงิน',
     
     // Payment Success
     'payment.success': 'ชำระเงินสำเร็จ',
@@ -1103,6 +1111,10 @@ const translations = {
     'invoice.amountDue': '应付金额',
     'invoice.availableCredit': '可用信用',
     'invoice.canPayWithCredit': '可以使用现有信用付款',
+    'invoice.unpaidInvoices': '未支付账单',
+    'invoice.paidInvoices': '已支付账单',
+    'invoice.noUnpaidInvoices': '没有未支付账单',
+    'invoice.noPaidInvoices': '暂无支付历史',
     
     // Payment Success
     'payment.success': '支付成功',

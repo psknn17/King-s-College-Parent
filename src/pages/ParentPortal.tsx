@@ -55,7 +55,8 @@ import {
   Ticket,
   Bus,
   PartyPopper,
-  ShoppingCart
+  ShoppingCart,
+  CheckCircle
 } from "lucide-react";
 import { mockStudents, getMockDataForStudent, mockInvoices, mockECAInvoices, mockTripInvoices, mockExamInvoices, mockSchoolBusInvoices, mockCreditNotes, mockReceipts, campusList, mandatoryCourses, mockEventActivitiesData, mockCreditNoteHistory, mockUpcomingDeadlines } from "@/data/mockData";
 import { generateReceiptPDF } from "@/utils/pdfGenerator";
@@ -166,8 +167,17 @@ export const ParentPortal = ({
   const paidThisTerm = allReceipts
     .filter(rec => rec.status === 'completed')
     .reduce((sum, rec) => sum + rec.amount, 0);
-    
+
   const overdueCount = 0;
+
+  // Helper function to group invoices by payment status
+  const groupInvoicesByPaymentStatus = (invoices: any[]) => {
+    const unpaid = invoices.filter(inv => ['pending', 'overdue', 'partial'].includes(inv.status));
+    const paid = invoices.filter(inv => inv.status === 'paid');
+    const unpaidTotal = unpaid.reduce((sum, inv) => sum + inv.amount_due, 0);
+    const paidTotal = paid.reduce((sum, inv) => sum + inv.amount_due, 0);
+    return { unpaid, paid, unpaidTotal, paidTotal };
+  };
 
   const handleAddToCart = (itemId: string, type: 'course' | 'activity' | 'event' | 'exam' | 'tuition' | 'eca' | 'trip' | 'schoolbus', studentId?: string, configData?: any) => {
     let item: any;
@@ -276,16 +286,6 @@ export const ParentPortal = ({
       // Find student info for courses
       const currentStudent = mockStudents.find(s => s.id.toString() === studentId);
       if (currentStudent) {
-        // Check campus validation
-        if (cartItems.length > 0 && currentStudent.campus !== currentCampus) {
-          toast({
-            title: t('portal.campusMismatch') || 'Campus Mismatch',
-            description: t('portal.campusMismatchDesc') || `Please switch to ${currentStudent.campus} campus or clear your cart`,
-            variant: "destructive",
-            duration: 4000,
-          });
-          return;
-        }
         studentInfo = { studentId: currentStudent.id.toString(), studentName: currentStudent.name };
       }
       
@@ -314,13 +314,6 @@ export const ParentPortal = ({
     setSelectedStudent(student.id.toString());
     setCurrentCampus(student.campus);
   };
-
-  // Auto-switch tab when switching to non-SISB student
-  useEffect(() => {
-    if (!isSISBStudent && !['summer', 'event'].includes(activeTab)) {
-      setActiveTab('summer');
-    }
-  }, [isSISBStudent, activeTab]);
 
   const handleRemoveFromCart = (itemId: string, studentId?: string) => {
     onRemoveFromCart(itemId, studentId);
@@ -526,32 +519,35 @@ export const ParentPortal = ({
                       {language === 'th' ? 'เลือกนักเรียน / Campus' : 'Select Student / Campus'}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {mockStudents.map((student, index) => (
-                      <DropdownMenuItem
-                        key={student.id}
-                        onClick={() => handleStudentChange(student)}
-                        className={`cursor-pointer ${student.campus === currentCampus ? 'bg-primary/5' : ''}`}
-                      >
-                        <div className="flex items-center gap-3 w-full">
-                          <span className="text-lg">{student.avatar}</span>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className={`font-medium ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                                {index + 1}. {student.name}
-                              </span>
+                    {mockStudents.map((student, index) => {
+                      const isSelected = student.id.toString() === selectedStudent;
+                      return (
+                        <DropdownMenuItem
+                          key={student.id}
+                          onSelect={() => handleStudentChange(student)}
+                          className={`cursor-pointer ${isSelected ? 'bg-primary/10 border-l-2 border-primary' : 'hover:bg-accent'}`}
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <span className="text-lg">{student.avatar}</span>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-medium ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                  {index + 1}. {student.name}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {student.class.replace(/Grade\s+(\d+)[A-Z]?/, 'Year $1')}
+                                </Badge>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs">
-                                {student.class.replace(/Grade\s+(\d+)[A-Z]?/, 'Year $1')}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {language === 'th' ? campusList.find(c => c.nameEn === student.campus)?.name : student.campus}
-                              </span>
-                            </div>
+                            {isSelected && (
+                              <CheckCircle className="h-5 w-5 text-primary flex-shrink-0" />
+                            )}
                           </div>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
+                        </DropdownMenuItem>
+                      );
+                    })}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -560,39 +556,24 @@ export const ParentPortal = ({
               <ChildrenOverview />
             </div>
           </div>
-          {cartItems.length > 0 && (
-            <div className="mt-2 p-2 bg-primary/5 rounded-md">
-              <p className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                {language === 'th' 
-                  ? `📌 ตอนนี้คุณกำลังเพิ่มรายการสำหรับ ${currentCampus} Campus เท่านั้น หากต้องการเปลี่ยน Campus กรุณาเปลี่ยนนักเรียน`
-                  : `📌 Currently adding items for ${currentCampus} Campus only. Switch student to change campus.`}
-              </p>
-            </div>
-          )}
         </div>
 
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'dashboard' | 'tuition' | 'afterschool' | 'summer' | 'event' | 'schoolbus' | 'transaction')} className="space-y-6">
           {/* Desktop Navigation - Tabs */}
-          <TabsList className={`hidden md:grid w-full gap-1 ${isSISBStudent ? 'grid-cols-7' : 'grid-cols-3'}`}>
-            {isSISBStudent && (
-              <TabsTrigger value="dashboard" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-                <GraduationCap className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">{t('portal.dashboard')}</span>
-              </TabsTrigger>
-            )}
-            {isSISBStudent && (
-              <TabsTrigger value="tuition" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-                <DollarSign className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">{t('portal.tuition')}</span>
-              </TabsTrigger>
-            )}
-            {isSISBStudent && (
-              <TabsTrigger value="afterschool" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-                <Clock className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">ECA</span>
-              </TabsTrigger>
-            )}
+          <TabsList className="hidden md:grid w-full gap-1 grid-cols-7">
+            <TabsTrigger value="dashboard" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+              <GraduationCap className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">{t('portal.dashboard')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="tuition" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+              <DollarSign className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">{t('portal.tuition')}</span>
+            </TabsTrigger>
+            <TabsTrigger value="afterschool" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+              <Clock className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">ECA</span>
+            </TabsTrigger>
             <TabsTrigger value="summer" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
               <Sun className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{language === 'th' ? 'ทริปและกิจกรรม' : language === 'zh' ? '旅行和活动' : 'Trip & Activity'}</span>
@@ -605,61 +586,53 @@ export const ParentPortal = ({
               <Bus className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{language === 'th' ? 'รถรับส่ง' : language === 'zh' ? '校车' : 'School Bus'}</span>
             </TabsTrigger>
-            {isSISBStudent && (
-              <TabsTrigger value="transaction" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-                <Receipt className="h-4 w-4 md:mr-2" />
-                <span className="hidden md:inline">{t('portal.transactionHistory')}</span>
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="transaction" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+              <Receipt className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">{t('portal.transactionHistory')}</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Mobile Horizontal Scrollable Tabs */}
           <div className="md:hidden overflow-x-auto pb-2 -mx-4 px-4">
             <div className="flex gap-2 min-w-max">
-              {isSISBStudent && (
-                <button
-                  onClick={() => setActiveTab('dashboard')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    activeTab === 'dashboard' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
-                >
-                  <GraduationCap className="h-4 w-4" />
-                  Dashboard
-                </button>
-              )}
-              {isSISBStudent && (
-                <button
-                  onClick={() => setActiveTab('tuition')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    activeTab === 'tuition' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
-                >
-                  <DollarSign className="h-4 w-4" />
-                  {t('portal.tuition')}
-                </button>
-              )}
-              {isSISBStudent && (
-                <button
-                  onClick={() => setActiveTab('afterschool')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    activeTab === 'afterschool' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
-                >
-                  <Clock className="h-4 w-4" />
-                  ECA
-                </button>
-              )}
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === 'dashboard'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+              >
+                <GraduationCap className="h-4 w-4" />
+                Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab('tuition')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === 'tuition'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+              >
+                <DollarSign className="h-4 w-4" />
+                {t('portal.tuition')}
+              </button>
+              <button
+                onClick={() => setActiveTab('afterschool')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === 'afterschool'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+              >
+                <Clock className="h-4 w-4" />
+                ECA
+              </button>
               <button
                 onClick={() => setActiveTab('summer')}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeTab === 'summer' 
-                    ? 'bg-primary text-primary-foreground' 
+                  activeTab === 'summer'
+                    ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
               >
@@ -688,19 +661,17 @@ export const ParentPortal = ({
                 <Bus className="h-4 w-4" />
                 {language === 'th' ? 'รถรับส่ง' : language === 'zh' ? '校车' : 'School Bus'}
               </button>
-              {isSISBStudent && (
-                <button
-                  onClick={() => setActiveTab('transaction')}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    activeTab === 'transaction' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
-                >
-                  <Receipt className="h-4 w-4" />
-                  {language === 'th' ? 'ประวัติ' : 'History'}
-                </button>
-              )}
+              <button
+                onClick={() => setActiveTab('transaction')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  activeTab === 'transaction'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+              >
+                <Receipt className="h-4 w-4" />
+                {language === 'th' ? 'ประวัติ' : 'History'}
+              </button>
             </div>
           </div>
 
@@ -935,26 +906,114 @@ export const ParentPortal = ({
             <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
               {/* Left 70% - Invoice List */}
               <div className="lg:col-span-7 space-y-4">
-                {allInvoices.filter(invoice => invoice.type === paymentPeriod).map(invoice => {
-                  const student = mockStudents.find(s => s.id === invoice.student_id);
-                  const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
-                  return (
-                    <div key={invoice.id} className="space-y-2">
-                      {/* Student identification tag */}
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                          {student?.name} - {student?.class}
-                        </Badge>
-                      </div>
-                      <InvoiceCard
-                        invoice={invoice}
-                        creditBalance={creditNote?.balance || 0}
-                        onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'tuition')}
-                        studentName={student?.name}
-                      />
-                    </div>
+                {(() => {
+                  const tuitionInvoices = allInvoices.filter(invoice =>
+                    invoice.type === paymentPeriod &&
+                    invoice.student_id.toString() === selectedStudent
                   );
-                })}
+                  const { unpaid, paid, unpaidTotal, paidTotal } = groupInvoicesByPaymentStatus(tuitionInvoices);
+
+                  return (
+                    <Accordion type="multiple" defaultValue={["unpaid"]} className="w-full space-y-2">
+                      {/* Unpaid Section */}
+                      <AccordionItem value="unpaid" className="border rounded-lg">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-2">
+                            <div className="flex items-center gap-3">
+                              <AlertCircle className="h-5 w-5 text-warning-orange" />
+                              <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.unpaidInvoices')}
+                              </span>
+                              <Badge variant="secondary">{unpaid.length}</Badge>
+                            </div>
+                            <Badge className="bg-warning-orange/20 text-warning-orange hover:bg-warning-orange/30">
+                              {formatCurrency(unpaidTotal)}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-4">
+                            {unpaid.filter(invoice => !isInCart(invoice.id, invoice.student_id?.toString())).length > 0 ? (
+                              unpaid.filter(invoice => !isInCart(invoice.id, invoice.student_id?.toString())).map(invoice => {
+                                const student = mockStudents.find(s => s.id === invoice.student_id);
+                                const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
+                                return (
+                                  <div key={invoice.id} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                        {student?.name} - {student?.class}
+                                      </Badge>
+                                    </div>
+                                    <InvoiceCard
+                                      invoice={invoice}
+                                      creditBalance={creditNote?.balance || 0}
+                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'tuition')}
+                                      studentName={student?.name}
+                                    />
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="text-center py-8">
+                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                                <p className={`text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                  {t('invoice.noUnpaidInvoices')}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      {/* Paid Section */}
+                      <AccordionItem value="paid" className="border rounded-lg">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-2">
+                            <div className="flex items-center gap-3">
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                              <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.paidInvoices')}
+                              </span>
+                              <Badge variant="secondary">{paid.length}</Badge>
+                            </div>
+                            <Badge className="bg-green-500/20 text-green-600 hover:bg-green-500/30">
+                              {formatCurrency(paidTotal)}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-4">
+                            {paid.length > 0 ? (
+                              paid.map(invoice => {
+                                const student = mockStudents.find(s => s.id === invoice.student_id);
+                                const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
+                                return (
+                                  <div key={invoice.id} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                        {student?.name} - {student?.class}
+                                      </Badge>
+                                    </div>
+                                    <InvoiceCard
+                                      invoice={invoice}
+                                      creditBalance={creditNote?.balance || 0}
+                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'tuition')}
+                                      studentName={student?.name}
+                                    />
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <p className={`text-center text-muted-foreground py-4 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.noPaidInvoices')}
+                              </p>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  );
+                })()}
               </div>
 
               {/* Right 30% - Tuition Cart Sidebar - Hidden on Mobile */}
@@ -969,7 +1028,6 @@ export const ParentPortal = ({
                   }))}
                   onRemoveItem={handleRemoveFromCart}
                   onCheckout={handleGoToCart}
-                  campus={currentCampus}
                 />
               </div>
             </div>
@@ -980,25 +1038,113 @@ export const ParentPortal = ({
             <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
               {/* Left 70% - Invoice List */}
               <div className="lg:col-span-7 space-y-4">
-                {mockECAInvoices.map(invoice => {
-                  const student = mockStudents.find(s => s.id === invoice.student_id);
-                  const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
-                  return (
-                    <div key={invoice.id} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                          {student?.name} - {student?.class}
-                        </Badge>
-                      </div>
-                      <InvoiceCard
-                        invoice={invoice}
-                        creditBalance={creditNote?.balance || 0}
-                        onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'eca')}
-                        studentName={student?.name}
-                      />
-                    </div>
+                {(() => {
+                  const ecaInvoices = mockECAInvoices.filter(invoice =>
+                    invoice.student_id.toString() === selectedStudent
                   );
-                })}
+                  const { unpaid, paid, unpaidTotal, paidTotal } = groupInvoicesByPaymentStatus(ecaInvoices);
+
+                  return (
+                    <Accordion type="multiple" defaultValue={["unpaid"]} className="w-full space-y-2">
+                      {/* Unpaid Section */}
+                      <AccordionItem value="unpaid" className="border rounded-lg">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-2">
+                            <div className="flex items-center gap-3">
+                              <AlertCircle className="h-5 w-5 text-warning-orange" />
+                              <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.unpaidInvoices')}
+                              </span>
+                              <Badge variant="secondary">{unpaid.length}</Badge>
+                            </div>
+                            <Badge className="bg-warning-orange/20 text-warning-orange hover:bg-warning-orange/30">
+                              {formatCurrency(unpaidTotal)}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-4">
+                            {unpaid.filter(invoice => !isInCart(invoice.id, invoice.student_id?.toString())).length > 0 ? (
+                              unpaid.filter(invoice => !isInCart(invoice.id, invoice.student_id?.toString())).map(invoice => {
+                                const student = mockStudents.find(s => s.id === invoice.student_id);
+                                const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
+                                return (
+                                  <div key={invoice.id} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                        {student?.name} - {student?.class}
+                                      </Badge>
+                                    </div>
+                                    <InvoiceCard
+                                      invoice={invoice}
+                                      creditBalance={creditNote?.balance || 0}
+                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'eca')}
+                                      studentName={student?.name}
+                                    />
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="text-center py-8">
+                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                                <p className={`text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                  {t('invoice.noUnpaidInvoices')}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      {/* Paid Section */}
+                      <AccordionItem value="paid" className="border rounded-lg">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-2">
+                            <div className="flex items-center gap-3">
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                              <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.paidInvoices')}
+                              </span>
+                              <Badge variant="secondary">{paid.length}</Badge>
+                            </div>
+                            <Badge className="bg-green-500/20 text-green-600 hover:bg-green-500/30">
+                              {formatCurrency(paidTotal)}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-4">
+                            {paid.length > 0 ? (
+                              paid.map(invoice => {
+                                const student = mockStudents.find(s => s.id === invoice.student_id);
+                                const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
+                                return (
+                                  <div key={invoice.id} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                        {student?.name} - {student?.class}
+                                      </Badge>
+                                    </div>
+                                    <InvoiceCard
+                                      invoice={invoice}
+                                      creditBalance={creditNote?.balance || 0}
+                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'eca')}
+                                      studentName={student?.name}
+                                    />
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <p className={`text-center text-muted-foreground py-4 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.noPaidInvoices')}
+                              </p>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  );
+                })()}
               </div>
 
               {/* Right 30% - Cart Sidebar */}
@@ -1013,7 +1159,6 @@ export const ParentPortal = ({
                   }))}
                   onRemoveItem={handleRemoveFromCart}
                   onCheckout={handleGoToCart}
-                  campus={currentCampus}
                 />
               </div>
             </div>
@@ -1024,25 +1169,113 @@ export const ParentPortal = ({
             <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
               {/* Left 70% - Invoice List */}
               <div className="lg:col-span-7 space-y-4">
-                {mockTripInvoices.map(invoice => {
-                  const student = mockStudents.find(s => s.id === invoice.student_id);
-                  const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
-                  return (
-                    <div key={invoice.id} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                          {student?.name} - {student?.class}
-                        </Badge>
-                      </div>
-                      <InvoiceCard
-                        invoice={invoice}
-                        creditBalance={creditNote?.balance || 0}
-                        onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'trip')}
-                        studentName={student?.name}
-                      />
-                    </div>
+                {(() => {
+                  const tripInvoices = mockTripInvoices.filter(invoice =>
+                    invoice.student_id.toString() === selectedStudent
                   );
-                })}
+                  const { unpaid, paid, unpaidTotal, paidTotal } = groupInvoicesByPaymentStatus(tripInvoices);
+
+                  return (
+                    <Accordion type="multiple" defaultValue={["unpaid"]} className="w-full space-y-2">
+                      {/* Unpaid Section */}
+                      <AccordionItem value="unpaid" className="border rounded-lg">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-2">
+                            <div className="flex items-center gap-3">
+                              <AlertCircle className="h-5 w-5 text-warning-orange" />
+                              <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.unpaidInvoices')}
+                              </span>
+                              <Badge variant="secondary">{unpaid.length}</Badge>
+                            </div>
+                            <Badge className="bg-warning-orange/20 text-warning-orange hover:bg-warning-orange/30">
+                              {formatCurrency(unpaidTotal)}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-4">
+                            {unpaid.filter(invoice => !isInCart(invoice.id, invoice.student_id?.toString())).length > 0 ? (
+                              unpaid.filter(invoice => !isInCart(invoice.id, invoice.student_id?.toString())).map(invoice => {
+                                const student = mockStudents.find(s => s.id === invoice.student_id);
+                                const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
+                                return (
+                                  <div key={invoice.id} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                        {student?.name} - {student?.class}
+                                      </Badge>
+                                    </div>
+                                    <InvoiceCard
+                                      invoice={invoice}
+                                      creditBalance={creditNote?.balance || 0}
+                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'trip')}
+                                      studentName={student?.name}
+                                    />
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="text-center py-8">
+                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                                <p className={`text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                  {t('invoice.noUnpaidInvoices')}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      {/* Paid Section */}
+                      <AccordionItem value="paid" className="border rounded-lg">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-2">
+                            <div className="flex items-center gap-3">
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                              <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.paidInvoices')}
+                              </span>
+                              <Badge variant="secondary">{paid.length}</Badge>
+                            </div>
+                            <Badge className="bg-green-500/20 text-green-600 hover:bg-green-500/30">
+                              {formatCurrency(paidTotal)}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-4">
+                            {paid.length > 0 ? (
+                              paid.map(invoice => {
+                                const student = mockStudents.find(s => s.id === invoice.student_id);
+                                const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
+                                return (
+                                  <div key={invoice.id} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                        {student?.name} - {student?.class}
+                                      </Badge>
+                                    </div>
+                                    <InvoiceCard
+                                      invoice={invoice}
+                                      creditBalance={creditNote?.balance || 0}
+                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'trip')}
+                                      studentName={student?.name}
+                                    />
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <p className={`text-center text-muted-foreground py-4 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.noPaidInvoices')}
+                              </p>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  );
+                })()}
               </div>
 
               {/* Right 30% - Cart Sidebar */}
@@ -1057,7 +1290,6 @@ export const ParentPortal = ({
                   }))}
                   onRemoveItem={handleRemoveFromCart}
                   onCheckout={handleGoToCart}
-                  campus={currentCampus}
                 />
               </div>
             </div>
@@ -1068,25 +1300,113 @@ export const ParentPortal = ({
             <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
               {/* Left 70% - Invoice List */}
               <div className="lg:col-span-7 space-y-4">
-                {mockExamInvoices.map(invoice => {
-                  const student = mockStudents.find(s => s.id === invoice.student_id);
-                  const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
-                  return (
-                    <div key={invoice.id} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                          {student?.name} - {student?.class}
-                        </Badge>
-                      </div>
-                      <InvoiceCard
-                        invoice={invoice}
-                        creditBalance={creditNote?.balance || 0}
-                        onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'exam')}
-                        studentName={student?.name}
-                      />
-                    </div>
+                {(() => {
+                  const examInvoices = mockExamInvoices.filter(invoice =>
+                    invoice.student_id.toString() === selectedStudent
                   );
-                })}
+                  const { unpaid, paid, unpaidTotal, paidTotal } = groupInvoicesByPaymentStatus(examInvoices);
+
+                  return (
+                    <Accordion type="multiple" defaultValue={["unpaid"]} className="w-full space-y-2">
+                      {/* Unpaid Section */}
+                      <AccordionItem value="unpaid" className="border rounded-lg">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-2">
+                            <div className="flex items-center gap-3">
+                              <AlertCircle className="h-5 w-5 text-warning-orange" />
+                              <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.unpaidInvoices')}
+                              </span>
+                              <Badge variant="secondary">{unpaid.length}</Badge>
+                            </div>
+                            <Badge className="bg-warning-orange/20 text-warning-orange hover:bg-warning-orange/30">
+                              {formatCurrency(unpaidTotal)}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-4">
+                            {unpaid.filter(invoice => !isInCart(invoice.id, invoice.student_id?.toString())).length > 0 ? (
+                              unpaid.filter(invoice => !isInCart(invoice.id, invoice.student_id?.toString())).map(invoice => {
+                                const student = mockStudents.find(s => s.id === invoice.student_id);
+                                const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
+                                return (
+                                  <div key={invoice.id} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                        {student?.name} - {student?.class}
+                                      </Badge>
+                                    </div>
+                                    <InvoiceCard
+                                      invoice={invoice}
+                                      creditBalance={creditNote?.balance || 0}
+                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'exam')}
+                                      studentName={student?.name}
+                                    />
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="text-center py-8">
+                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                                <p className={`text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                  {t('invoice.noUnpaidInvoices')}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      {/* Paid Section */}
+                      <AccordionItem value="paid" className="border rounded-lg">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-2">
+                            <div className="flex items-center gap-3">
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                              <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.paidInvoices')}
+                              </span>
+                              <Badge variant="secondary">{paid.length}</Badge>
+                            </div>
+                            <Badge className="bg-green-500/20 text-green-600 hover:bg-green-500/30">
+                              {formatCurrency(paidTotal)}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-4">
+                            {paid.length > 0 ? (
+                              paid.map(invoice => {
+                                const student = mockStudents.find(s => s.id === invoice.student_id);
+                                const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
+                                return (
+                                  <div key={invoice.id} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                        {student?.name} - {student?.class}
+                                      </Badge>
+                                    </div>
+                                    <InvoiceCard
+                                      invoice={invoice}
+                                      creditBalance={creditNote?.balance || 0}
+                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'exam')}
+                                      studentName={student?.name}
+                                    />
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <p className={`text-center text-muted-foreground py-4 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.noPaidInvoices')}
+                              </p>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  );
+                })()}
               </div>
 
               {/* Right 30% - Cart Sidebar */}
@@ -1101,7 +1421,6 @@ export const ParentPortal = ({
                   }))}
                   onRemoveItem={handleRemoveFromCart}
                   onCheckout={handleGoToCart}
-                  campus={currentCampus}
                 />
               </div>
             </div>
@@ -1112,25 +1431,113 @@ export const ParentPortal = ({
             <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
               {/* Left 70% - Invoice List */}
               <div className="lg:col-span-7 space-y-4">
-                {mockSchoolBusInvoices.map(invoice => {
-                  const student = mockStudents.find(s => s.id === invoice.student_id);
-                  const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
-                  return (
-                    <div key={invoice.id} className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                          {student?.name} - {student?.class}
-                        </Badge>
-                      </div>
-                      <InvoiceCard
-                        invoice={invoice}
-                        creditBalance={creditNote?.balance || 0}
-                        onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'schoolbus')}
-                        studentName={student?.name}
-                      />
-                    </div>
+                {(() => {
+                  const schoolBusInvoices = mockSchoolBusInvoices.filter(invoice =>
+                    invoice.student_id.toString() === selectedStudent
                   );
-                })}
+                  const { unpaid, paid, unpaidTotal, paidTotal } = groupInvoicesByPaymentStatus(schoolBusInvoices);
+
+                  return (
+                    <Accordion type="multiple" defaultValue={["unpaid"]} className="w-full space-y-2">
+                      {/* Unpaid Section */}
+                      <AccordionItem value="unpaid" className="border rounded-lg">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-2">
+                            <div className="flex items-center gap-3">
+                              <AlertCircle className="h-5 w-5 text-warning-orange" />
+                              <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.unpaidInvoices')}
+                              </span>
+                              <Badge variant="secondary">{unpaid.length}</Badge>
+                            </div>
+                            <Badge className="bg-warning-orange/20 text-warning-orange hover:bg-warning-orange/30">
+                              {formatCurrency(unpaidTotal)}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-4">
+                            {unpaid.filter(invoice => !isInCart(invoice.id, invoice.student_id?.toString())).length > 0 ? (
+                              unpaid.filter(invoice => !isInCart(invoice.id, invoice.student_id?.toString())).map(invoice => {
+                                const student = mockStudents.find(s => s.id === invoice.student_id);
+                                const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
+                                return (
+                                  <div key={invoice.id} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                        {student?.name} - {student?.class}
+                                      </Badge>
+                                    </div>
+                                    <InvoiceCard
+                                      invoice={invoice}
+                                      creditBalance={creditNote?.balance || 0}
+                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'schoolbus')}
+                                      studentName={student?.name}
+                                    />
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div className="text-center py-8">
+                                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                                <p className={`text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                  {t('invoice.noUnpaidInvoices')}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      {/* Paid Section */}
+                      <AccordionItem value="paid" className="border rounded-lg">
+                        <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center justify-between w-full pr-2">
+                            <div className="flex items-center gap-3">
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                              <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.paidInvoices')}
+                              </span>
+                              <Badge variant="secondary">{paid.length}</Badge>
+                            </div>
+                            <Badge className="bg-green-500/20 text-green-600 hover:bg-green-500/30">
+                              {formatCurrency(paidTotal)}
+                            </Badge>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-4">
+                            {paid.length > 0 ? (
+                              paid.map(invoice => {
+                                const student = mockStudents.find(s => s.id === invoice.student_id);
+                                const creditNote = allCreditNotes.find(cn => cn.student_id === invoice.student_id);
+                                return (
+                                  <div key={invoice.id} className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                        {student?.name} - {student?.class}
+                                      </Badge>
+                                    </div>
+                                    <InvoiceCard
+                                      invoice={invoice}
+                                      creditBalance={creditNote?.balance || 0}
+                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'schoolbus')}
+                                      studentName={student?.name}
+                                    />
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <p className={`text-center text-muted-foreground py-4 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                                {t('invoice.noPaidInvoices')}
+                              </p>
+                            )}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  );
+                })()}
               </div>
 
               {/* Right 30% - Cart Sidebar */}
@@ -1145,7 +1552,6 @@ export const ParentPortal = ({
                   }))}
                   onRemoveItem={handleRemoveFromCart}
                   onCheckout={handleGoToCart}
-                  campus={currentCampus}
                 />
               </div>
             </div>

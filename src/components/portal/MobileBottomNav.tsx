@@ -39,16 +39,16 @@ export const MobileBottomNav = ({
   }, [cartItemCount, prevCartCount]);
 
   const navItems = [
-    { id: 'dashboard', icon: GraduationCap, label: 'Dashboard', labelTh: 'หน้าหลัก', labelZh: '仪表盘', sisbOnly: true },
-    { id: 'tuition', icon: DollarSign, label: 'Tuition', labelTh: 'ค่าเล่าเรียน', labelZh: '学费', sisbOnly: true },
-    { id: 'afterschool', icon: Clock, label: 'ECA', labelTh: 'ECA', labelZh: 'ECA', sisbOnly: true },
-    { id: 'summer', icon: Sun, label: 'Trip & Activity', labelTh: 'ทริปและกิจกรรม', labelZh: '旅行和活动', sisbOnly: false },
-    { id: 'event', icon: Calendar, label: 'Exam', labelTh: 'สอบ', labelZh: '考试', sisbOnly: false },
-    { id: 'schoolbus', icon: Bus, label: 'School Bus', labelTh: 'รถรับส่ง', labelZh: '校车', sisbOnly: false },
-    { id: 'transaction', icon: Receipt, label: 'History', labelTh: 'ประวัติ', labelZh: '历史', sisbOnly: true },
+    { id: 'dashboard', icon: GraduationCap, label: 'Dashboard', labelTh: 'หน้าหลัก', labelZh: '仪表盘' },
+    { id: 'tuition', icon: DollarSign, label: 'Tuition', labelTh: 'ค่าเล่าเรียน', labelZh: '学费' },
+    { id: 'afterschool', icon: Clock, label: 'ECA', labelTh: 'ECA', labelZh: 'ECA' },
+    { id: 'summer', icon: Sun, label: 'Trip & Activity', labelTh: 'ทริปและกิจกรรม', labelZh: '旅行和活动' },
+    { id: 'event', icon: Calendar, label: 'Exam', labelTh: 'สอบ', labelZh: '考试' },
+    { id: 'schoolbus', icon: Bus, label: 'School Bus', labelTh: 'รถรับส่ง', labelZh: '校车' },
+    { id: 'transaction', icon: Receipt, label: 'History', labelTh: 'ประวัติ', labelZh: '历史' },
   ];
 
-  const filteredItems = navItems.filter(item => isSISBStudent || !item.sisbOnly);
+  const filteredItems = navItems;
 
   const getLabel = (item: typeof navItems[0]) => {
     if (language === 'th') return item.labelTh;
