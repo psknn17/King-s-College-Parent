@@ -12,17 +12,19 @@ interface SummaryBoxProps {
     value: number;
     isPositive: boolean;
   };
+  badge?: string | number;
   onClick?: () => void;
 }
 
-export const SummaryBox = ({ 
-  title, 
-  value, 
-  subtitle, 
-  icon: Icon, 
+export const SummaryBox = ({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
   color = 'primary',
   trend,
-  onClick 
+  badge,
+  onClick
 }: SummaryBoxProps) => {
   const { language } = useLanguage();
   const colorClasses = {
@@ -46,10 +48,15 @@ export const SummaryBox = ({
   };
 
   return (
-    <Card 
+    <Card
       className={`relative overflow-hidden transition-all hover:shadow-md border-2 ${colorClasses[color]} ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
+      {badge !== undefined && (
+        <div className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground ring-2 ring-background">
+          {badge}
+        </div>
+      )}
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -61,9 +68,8 @@ export const SummaryBox = ({
                 {typeof value === 'number' ? value.toLocaleString() : value}
               </p>
               {trend && (
-                <span className={`text-xs font-medium ${
-                  trend.isPositive ? 'text-finance-green' : 'text-destructive'
-                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                <span className={`text-xs font-medium ${trend.isPositive ? 'text-finance-green' : 'text-destructive'
+                  } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                   {trend.isPositive ? '+' : ''}{trend.value}%
                 </span>
               )}
@@ -74,7 +80,7 @@ export const SummaryBox = ({
               </p>
             )}
           </div>
-          
+
           <div className={`w-12 h-12 rounded-lg ${iconBgClasses[color]} flex items-center justify-center`}>
             <Icon className="h-6 w-6" />
           </div>

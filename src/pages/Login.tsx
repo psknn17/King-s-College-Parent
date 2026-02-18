@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LoginForm } from "@/components/auth/LoginForm";
 import { OTPVerification } from "@/components/auth/OTPVerification";
 import { SignUp } from "@/components/auth/SignUp";
+import { ForgotPassword } from "@/components/auth/ForgotPassword";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
 import schoolBuilding from "@/assets/school-building-new.jpg";
@@ -12,14 +13,14 @@ interface LoginProps {
   onLogin: () => void;
 }
 
-type AuthView = "email" | "otp" | "signup";
+type AuthView = "email" | "otp" | "signup" | "forgot";
 
 export const Login = ({ onLogin }: LoginProps) => {
   const [currentView, setCurrentView] = useState<AuthView>("email");
   const [userEmail, setUserEmail] = useState<string>("");
   const { t, getFontClass } = useLanguage();
 
-  const handleEmailSubmit = (email: string) => {
+  const handleEmailSubmit = (email: string, _password: string) => {
     setUserEmail(email);
     setCurrentView("otp");
   };
@@ -49,11 +50,18 @@ export const Login = ({ onLogin }: LoginProps) => {
             onBackToLogin={() => setCurrentView("email")}
           />
         );
+      case "forgot":
+        return (
+          <ForgotPassword
+            onBackToLogin={() => setCurrentView("email")}
+          />
+        );
       default:
         return (
           <LoginForm
             onSubmitEmail={handleEmailSubmit}
             onSignUp={() => setCurrentView("signup")}
+            onForgotPassword={() => setCurrentView("forgot")}
           />
         );
     }
@@ -141,14 +149,16 @@ export const Login = ({ onLogin }: LoginProps) => {
               
               <div className="space-y-2">
                 <CardTitle className="text-2xl font-bold text-foreground animate-fade-in lg:animate-none" style={{ animationDelay: '0.25s' }}>
-                  {currentView === "signup" ? t('auth.signupTitle') : 
+                  {currentView === "signup" ? t('auth.signupTitle') :
                    currentView === "otp" ? t('auth.verifyOTP') :
+                   currentView === "forgot" ? t('auth.resetPasswordTitle') :
                    t('portal.loginTitle')}
                 </CardTitle>
                 <CardDescription className="text-base text-muted-foreground animate-fade-in lg:animate-none" style={{ animationDelay: '0.3s' }}>
                   {currentView === "email" && t('portal.loginSubtitle')}
                   {currentView === "otp" && t('auth.otpSubtitle')}
                   {currentView === "signup" && t('auth.signupSubtitle')}
+                  {currentView === "forgot" && t('auth.resetPasswordSubtitle')}
                 </CardDescription>
               </div>
             </CardHeader>

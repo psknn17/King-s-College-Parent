@@ -82,17 +82,15 @@ export const ChildrenOverview = () => {
   const upcomingDue = getUpcomingDue();
   const upcomingActivities = getUpcomingActivities();
 
-  const totalNotifications = overdueInvoices.length + upcomingDue.length;
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className={`gap-2 relative ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
           <Bell className="h-4 w-4" />
           {language === 'th' ? 'ภาพรวมสำคัญ' : language === 'zh' ? '重要概览' : 'Important Overview'}
-          {totalNotifications > 0 && (
+          {overdueInvoices.length > 0 && (
             <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
-              {totalNotifications > 9 ? '9+' : totalNotifications}
+              {overdueInvoices.length > 9 ? '9+' : overdueInvoices.length}
             </Badge>
           )}
         </Button>

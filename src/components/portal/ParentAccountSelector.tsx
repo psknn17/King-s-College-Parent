@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ChevronDown, User, Settings, CreditCard, Bell, LogOut } from "lucide-react";
+import { ChevronDown, Settings, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,16 +10,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { AccountSettingsDialog } from "./AccountSettingsDialog";
 
 interface ParentAccountSelectorProps {
-  onAccountSettings?: () => void;
   onLogout?: () => void;
 }
 
-export const ParentAccountSelector = ({ onAccountSettings, onLogout }: ParentAccountSelectorProps) => {
+export const ParentAccountSelector = ({ onLogout }: ParentAccountSelectorProps) => {
   const { t, language } = useLanguage();
-  
-  // Mock parent data
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
   const parentAccount = {
     name: "John Smith",
     email: "john.smith@email.com",
@@ -27,70 +27,62 @@ export const ParentAccountSelector = ({ onAccountSettings, onLogout }: ParentAcc
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2 px-3 py-2 h-auto">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
-              {parentAccount.initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="hidden md:flex flex-col items-start">
-            <span className={`text-sm font-medium ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-              {parentAccount.name}
-            </span>
-            <span className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-              {t('portal.parentAccount')}
-            </span>
-          </div>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-sm border">
-        <div className="p-2">
-          <div className="flex items-center gap-2">
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="flex items-center gap-2 px-3 py-2 h-auto">
             <Avatar className="h-8 w-8">
               <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
                 {parentAccount.initials}
               </AvatarFallback>
             </Avatar>
-            <div className="flex flex-col">
+            <div className="hidden md:flex flex-col items-start">
               <span className={`text-sm font-medium ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                 {parentAccount.name}
               </span>
               <span className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                {parentAccount.email}
+                {t('portal.parentAccount')}
               </span>
             </div>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-sm border">
+          <div className="p-2">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="text-xs font-medium bg-primary/10 text-primary">
+                  {parentAccount.initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className={`text-sm font-medium ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                  {parentAccount.name}
+                </span>
+                <span className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                  {parentAccount.email}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onAccountSettings} className="cursor-pointer">
-          <Settings className="h-4 w-4 mr-2" />
-          <span className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-            {t('portal.accountSettings')}
-          </span>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
-          <CreditCard className="h-4 w-4 mr-2" />
-          <span className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-            {t('portal.paymentMethods')}
-          </span>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
-          <Bell className="h-4 w-4 mr-2" />
-          <span className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-            {t('portal.notificationSettings')}
-          </span>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onLogout} className="cursor-pointer text-destructive focus:text-destructive">
-          <LogOut className="h-4 w-4 mr-2" />
-          <span className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-            {t('nav.logout')}
-          </span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setSettingsOpen(true)} className="cursor-pointer">
+            <Settings className="h-4 w-4 mr-2" />
+            <span className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+              {t('portal.accountSettings')}
+            </span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onLogout} className="cursor-pointer text-destructive focus:text-destructive">
+            <LogOut className="h-4 w-4 mr-2" />
+            <span className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+              {t('nav.logout')}
+            </span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AccountSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+    </>
   );
 };

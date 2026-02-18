@@ -9,8 +9,7 @@ interface MobileBottomNavProps {
   onTabChange: (tab: string) => void;
   cartItemCount?: number;
   isSISBStudent?: boolean;
-  onToggleWeeklySchedule?: () => void;
-  isWeeklyScheduleOpen?: boolean;
+  unpaidInvoicesCount?: number;
 }
 
 export const MobileBottomNav = ({
@@ -18,14 +17,13 @@ export const MobileBottomNav = ({
   onTabChange,
   cartItemCount = 0,
   isSISBStudent = true,
-  onToggleWeeklySchedule,
-  isWeeklyScheduleOpen = false,
+  unpaidInvoicesCount = 0,
 }: MobileBottomNavProps) => {
   const { language } = useLanguage();
   const [prevCartCount, setPrevCartCount] = useState(cartItemCount);
   const [badgeAnimating, setBadgeAnimating] = useState(false);
   const [tappedTab, setTappedTab] = useState<string | null>(null);
-  
+
   const fontClass = language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato';
 
   // Animate badge when cart count changes
@@ -42,7 +40,7 @@ export const MobileBottomNav = ({
     { id: 'dashboard', icon: GraduationCap, label: 'Dashboard', labelTh: 'หน้าหลัก', labelZh: '仪表盘' },
     { id: 'tuition', icon: DollarSign, label: 'Tuition', labelTh: 'ค่าเล่าเรียน', labelZh: '学费' },
     { id: 'afterschool', icon: Clock, label: 'ECA', labelTh: 'ECA', labelZh: 'ECA' },
-    { id: 'summer', icon: Sun, label: 'Trip & Activity', labelTh: 'ทริปและกิจกรรม', labelZh: '旅行和活动' },
+    { id: 'summer', icon: Sun, label: 'Trip & Activity', labelTh: 'ทริปและกิจกรรม', labelZh: '旅行และกิจกรรม' },
     { id: 'event', icon: Calendar, label: 'Exam', labelTh: 'สอบ', labelZh: '考试' },
     { id: 'schoolbus', icon: Bus, label: 'School Bus', labelTh: 'รถรับส่ง', labelZh: '校车' },
     { id: 'transaction', icon: Receipt, label: 'History', labelTh: 'ประวัติ', labelZh: '历史' },
@@ -62,11 +60,6 @@ export const MobileBottomNav = ({
     onTabChange(tabId);
   };
 
-  const handleCalendarClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onToggleWeeklySchedule?.();
-  };
-
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t border-border shadow-lg safe-area-bottom animate-slide-in-bottom overflow-visible">
       <div className="flex items-center justify-around px-1 py-2 overflow-visible">
@@ -74,9 +67,9 @@ export const MobileBottomNav = ({
           const isActive = activeTab === item.id;
           const isTapped = tappedTab === item.id;
           const Icon = item.icon;
-          const showBadge = item.id === 'afterschool' && cartItemCount > 0;
-          const showCalendarButton = item.id === 'afterschool' && isActive;
-          
+          const showBadge = (item.id === 'afterschool' && cartItemCount > 0) || (item.id === 'tuition' && unpaidInvoicesCount > 0);
+          const badgeValue = item.id === 'afterschool' ? cartItemCount : unpaidInvoicesCount;
+
           return (
             <div key={item.id} className="relative flex-1 min-w-0 overflow-visible">
               <button
@@ -84,8 +77,8 @@ export const MobileBottomNav = ({
                 className={cn(
                   "relative flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-lg min-w-0 w-full",
                   "transition-all duration-200 touch-active",
-                  isActive 
-                    ? "text-primary bg-primary/10" 
+                  isActive
+                    ? "text-primary bg-primary/10"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                   isTapped && "animate-tap-bounce"
                 )}
@@ -98,14 +91,14 @@ export const MobileBottomNav = ({
                     isTapped && "scale-90"
                   )} />
                   {showBadge && (
-                    <Badge 
-                      variant="destructive" 
+                    <Badge
+                      variant="destructive"
                       className={cn(
                         "absolute -top-2 -right-2 h-4 w-4 flex items-center justify-center p-0 text-[10px]",
                         badgeAnimating && "animate-scale-bounce"
                       )}
                     >
-                      {cartItemCount > 9 ? '9+' : cartItemCount}
+                      {badgeValue > 9 ? '9+' : badgeValue}
                     </Badge>
                   )}
                 </div>
@@ -120,7 +113,6 @@ export const MobileBottomNav = ({
                   <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full animate-slide-indicator" />
                 )}
               </button>
-              
             </div>
           );
         })}

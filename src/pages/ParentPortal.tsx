@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { PortalHeader } from "@/components/portal/PortalHeader";
-import { ChildrenOverview } from "@/components/portal/ChildrenOverview";
 import { SummaryBox } from "@/components/portal/SummaryBox";
 import { InvoiceCard } from "@/components/portal/InvoiceCard";
 import { CourseCard } from "@/components/portal/CourseCard";
@@ -14,7 +13,6 @@ import { CampCheckout } from "@/components/portal/CampCheckout";
 import { ReceiptList } from "@/components/portal/ReceiptList";
 import { StudentFilter } from "@/components/portal/StudentFilter";
 import { CountdownTimer } from "@/components/portal/CountdownTimer";
-import { WeeklyCalendarView } from "@/components/portal/WeeklyCalendarView";
 import { MobileBottomNav } from "@/components/portal/MobileBottomNav";
 import { MobileCartDrawer } from "@/components/portal/MobileCartDrawer";
 import { MobileFilterSection } from "@/components/portal/MobileFilterSection";
@@ -79,14 +77,14 @@ interface ParentPortalProps {
   onCancelCountdown?: () => void;
 }
 
-export const ParentPortal = ({ 
-  onLogout, 
-  onGoToCart, 
-  onGoToCheckout, 
+export const ParentPortal = ({
+  onLogout,
+  onGoToCart,
+  onGoToCheckout,
   onGoToTripCart,
-  cartItems, 
-  onAddToCart, 
-  onRemoveFromCart, 
+  cartItems,
+  onAddToCart,
+  onRemoveFromCart,
   isInCart,
   showCountdown = false,
   onCountdownExpired,
@@ -99,7 +97,7 @@ export const ParentPortal = ({
   const [currentCampus, setCurrentCampus] = useState<string>(mockStudents[0]?.campus || 'Pracha Uthit');
   const paymentPeriod: 'Termly' = 'Termly';
   const [selectedCamp, setSelectedCamp] = useState<any>(null);
-  
+
   // Search states for each tab
   const [searchAfterSchool, setSearchAfterSchool] = useState('');
   const [searchSummer, setSearchSummer] = useState('');
@@ -107,18 +105,17 @@ export const ParentPortal = ({
   const [searchExam, setSearchExam] = useState('');
   const [searchTrip, setSearchTrip] = useState('');
   const [filterDay, setFilterDay] = useState<string>("all");
-  
+
   // Trip status management
   const [tripStatuses, setTripStatuses] = useState<Record<string, 'pending' | 'accepted' | 'declined' | 'paid'>>({});
-  
+
   // Trip cart items
   const [tripCartItems, setTripCartItems] = useState<TripCartItem[]>([]);
-  
+
   // Mobile cart drawer state
   const [mobileCartOpen, setMobileCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [cartBounce, setCartBounce] = useState(false);
-  const [isWeeklyScheduleOpen, setIsWeeklyScheduleOpen] = useState(false);
   const prevCartCountRef = useRef(cartItems.length);
   const isMobile = useIsMobile();
 
@@ -137,7 +134,7 @@ export const ParentPortal = ({
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
-  
+
   const { t, language, formatCurrency } = useLanguage();
 
   // Get current student info to determine if they're SISB or non-SISB
@@ -146,34 +143,99 @@ export const ParentPortal = ({
 
   // Count course items in cart (excluding tuition)
   const courseItemsCount = cartItems.filter(item => item.type === 'course' || item.type === 'activity' || item.type === 'event' || item.type === 'exam').length;
-  
-  // Get combined data for all students
-  const allInvoices = mockInvoices;
+
+  // Initialize invoices state from mock data to allow status updates (Simulating a database)
+  const [allInvoicesState, setAllInvoicesState] = useState(() => [
+    ...mockInvoices,
+    ...mockECAInvoices,
+    ...mockTripInvoices,
+    ...mockExamInvoices,
+    ...mockSchoolBusInvoices
+  ]);
+
+  // Source of truth for all components
+  const allInvoices = allInvoicesState;
   const allCreditNotes = mockCreditNotes;
   const allReceipts = mockReceipts;
-  
-  // Calculate combined statistics
+
+  // Calculate statistics filtered by selected student
   const stats = {
-    outstandingInvoices: allInvoices.filter(inv => inv.status === 'pending').length,
-    paidThisTerm: allInvoices.filter(inv => inv.status === 'paid').length,
-    creditBalance: allCreditNotes.reduce((sum, cn) => sum + cn.balance, 0),
+    outstandingInvoices: allInvoices.filter(inv => (inv.status === 'pending' || inv.status === 'overdue') && inv.student_id.toString() === selectedStudent).length,
+    paidThisTerm: allInvoices.filter(inv => inv.status === 'paid' && inv.student_id.toString() === selectedStudent).length,
+    creditBalance: allCreditNotes.filter(cn => cn.student_id.toString() === selectedStudent).reduce((sum, cn) => sum + cn.balance, 0),
     availableCourses: 15,
   };
-  
-  const outstandingAmount = allInvoices
-    .filter(inv => inv.status === 'pending')
-    .reduce((sum, inv) => sum + inv.amount_due, 0);
-    
+
+  const outstandingInvoices = allInvoices.filter(inv =>
+    (inv.status === 'pending' || inv.status === 'overdue') &&
+    inv.student_id.toString() === selectedStudent &&
+    !cartItems.some(item => item.id === inv.id && item.studentId === inv.student_id.toString())
+  );
+
+  const outstandingAmount = outstandingInvoices.reduce((sum, inv) => sum + inv.amount_due, 0);
+
   const paidThisTerm = allReceipts
-    .filter(rec => rec.status === 'completed')
+    .filter(rec => rec.status === 'completed' && rec.student_id.toString() === selectedStudent)
     .reduce((sum, rec) => sum + rec.amount, 0);
 
-  const overdueCount = 0;
+  const overdueInvoices = outstandingInvoices.filter(inv =>
+    inv.status === 'overdue'
+  );
 
-  // Helper function to group invoices by payment status
+  const overdueCount = overdueInvoices.length;
+  const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + inv.amount_due, 0);
+
+  // Calculate individual unpaid counts for notification badges
+  const categoryUnpaidCounts = useMemo(() => {
+    const isUnpaidItem = (inv: any) =>
+      (['pending', 'overdue', 'partial'].includes(inv.status) || (inv.status === 'pending' && new Date(inv.due_date) < new Date())) &&
+      inv.student_id.toString() === selectedStudent &&
+      !cartItems.some(item => item.id === inv.id && item.studentId === inv.student_id.toString());
+
+    // Tuition: Show ALL items (Aggregated View)
+    const tuition = allInvoices.filter(isUnpaidItem).length;
+
+    const eca = allInvoices.filter(inv => isUnpaidItem(inv) && inv.id.startsWith('ECA-')).length;
+    const trip = allInvoices.filter(inv => isUnpaidItem(inv) && inv.id.startsWith('TRIP-')).length;
+    const exam = allInvoices.filter(inv => isUnpaidItem(inv) && inv.id.startsWith('EXAM-')).length;
+    const schoolbus = allInvoices.filter(inv => isUnpaidItem(inv) && inv.id.startsWith('BUS-')).length;
+
+    return {
+      tuition,
+      eca,
+      trip,
+      exam,
+      schoolbus,
+    };
+  }, [selectedStudent, allInvoices, cartItems]);
+
+  const unpaidInvoicesCount = allInvoices.filter(inv =>
+    (['pending', 'overdue', 'partial'].includes(inv.status) || (inv.status === 'pending' && new Date(inv.due_date) < new Date())) &&
+    inv.student_id.toString() === selectedStudent &&
+    !cartItems.some(item => item.id === inv.id && item.studentId === inv.student_id.toString())
+  ).length;
+
+  // Helper function to group invoices by payment status and sort by due date (newest to oldest)
   const groupInvoicesByPaymentStatus = (invoices: any[]) => {
-    const unpaid = invoices.filter(inv => ['pending', 'overdue', 'partial'].includes(inv.status));
-    const paid = invoices.filter(inv => inv.status === 'paid');
+    const sortByDateDesc = (a: any, b: any) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime();
+    const sortOverdueFirst = (a: any, b: any) => {
+      if (a.status === 'overdue' && b.status !== 'overdue') return -1;
+      if (a.status !== 'overdue' && b.status === 'overdue') return 1;
+      return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+    };
+
+    // Filter out items already in cart for the 'unpaid' view
+    const unpaid = invoices
+      .filter(inv =>
+        (['pending', 'overdue', 'partial'].includes(inv.status) || (inv.status === 'pending' && new Date(inv.due_date) < new Date())) &&
+        !cartItems.some(item => item.id === inv.id && item.studentId === inv.student_id.toString())
+      )
+      .sort(sortOverdueFirst);
+
+    const paid = invoices
+      .filter(inv => inv.status === 'paid')
+      .sort(sortByDateDesc);
+
     const unpaidTotal = unpaid.reduce((sum, inv) => sum + inv.amount_due, 0);
     const paidTotal = paid.reduce((sum, inv) => sum + inv.amount_due, 0);
     return { unpaid, paid, unpaidTotal, paidTotal };
@@ -182,17 +244,17 @@ export const ParentPortal = ({
   const handleAddToCart = (itemId: string, type: 'course' | 'activity' | 'event' | 'exam' | 'tuition' | 'eca' | 'trip' | 'schoolbus', studentId?: string, configData?: any) => {
     let item: any;
     let studentInfo: { studentId?: string; studentName?: string } = {};
-    
+
     if (type === 'tuition') {
       const invoice = mockInvoices.find(inv => inv.id === itemId);
       if (!invoice) return;
-      
+
       // Find student info for tuition
       const student = mockStudents.find(s => s.id === invoice.student_id);
       if (student) {
         studentInfo = { studentId: student.id.toString(), studentName: student.name };
       }
-      
+
       item = {
         id: itemId,
         name: invoice.description,
@@ -266,29 +328,29 @@ export const ParentPortal = ({
       };
     } else {
       const studentData = getMockDataForStudent(parseInt(studentId || selectedStudent));
-      
+
       // Check if it's from courses (after-school), summer activities, or events
       let course = studentData.courses.find((c: any) => c.id === itemId);
       let category = 'after-school';
-      
+
       if (!course) {
         course = studentData.summerActivities.find((c: any) => c.id === itemId);
         category = 'summer';
       }
-      
+
       if (!course) {
         course = studentData.eventActivities.find((c: any) => c.id === itemId);
         category = 'event';
       }
-      
+
       if (!course) return;
-      
+
       // Find student info for courses
       const currentStudent = mockStudents.find(s => s.id.toString() === studentId);
       if (currentStudent) {
         studentInfo = { studentId: currentStudent.id.toString(), studentName: currentStudent.name };
       }
-      
+
       item = {
         id: itemId,
         name: course.name,
@@ -299,7 +361,7 @@ export const ParentPortal = ({
         ...studentInfo
       };
     }
-    
+
     const success = onAddToCart(item);
     if (success) {
       toast({
@@ -331,7 +393,23 @@ export const ParentPortal = ({
   };
 
   const handleGoToCart = () => {
-    onGoToCart();
+    if (cartItems.length === 0) return;
+
+    // Simulate Payment Success - Data will disappear from 'unpaid' filters immediately
+    const paidItemIds = cartItems.map(item => item.id);
+
+    setAllInvoicesState(prev => prev.map(inv =>
+      paidItemIds.includes(inv.id) ? { ...inv, status: 'paid' as const } : inv
+    ));
+
+    // Clear cart items one by one via prop
+    cartItems.forEach(item => {
+      onRemoveFromCart(item.id, item.studentId);
+    });
+
+    // Feedback to user
+    alert(language === 'th' ? 'ชำระเงินสำเร็จแล้ว!' : 'Payment Successful!');
+    // Staying on the current tab so the user sees the counts decrease and items disappear instantly
   };
 
   const handleDownloadReceipt = (receiptId: string) => {
@@ -370,13 +448,13 @@ export const ParentPortal = ({
       });
     }
   };
-  
+
   // Filter functions for search
   const filterCourses = (courses: any[], searchQuery: string) => {
     if (!searchQuery.trim()) return courses;
     const query = searchQuery.toLowerCase();
-    return courses.filter(course => 
-      course.name.toLowerCase().includes(query) || 
+    return courses.filter(course =>
+      course.name.toLowerCase().includes(query) ||
       course.description?.toLowerCase().includes(query) ||
       course.vendor?.toLowerCase().includes(query)
     );
@@ -385,21 +463,21 @@ export const ParentPortal = ({
   // Convert courses to calendar format
   const calendarCourses = useMemo(() => {
     const allCourses: any[] = [];
-    
+
     mockStudents.forEach(student => {
       const studentData = getMockDataForStudent(student.id);
-      
+
       [...studentData.courses, ...studentData.summerActivities, ...studentData.eventActivities].forEach(course => {
         // Parse schedule to extract days and times
         const scheduleMatch = course.schedule.match(/(Mon|Tue|Wed|Thu|Fri|Sat|Sun).*?(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
-        
+
         if (scheduleMatch) {
           const days = course.schedule.match(/(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/g) || [];
           const startHour = scheduleMatch[2];
           const startMin = scheduleMatch[3];
           const endHour = scheduleMatch[4];
           const endMin = scheduleMatch[5];
-          
+
           days.forEach(day => {
             allCourses.push({
               id: `${course.id}-${day}`,
@@ -424,26 +502,26 @@ export const ParentPortal = ({
         }
       });
     });
-    
+
     return allCourses;
   }, [cartItems, isInCart]);
 
   // Convert mandatory courses to calendar format
   const calendarMandatoryCourses = useMemo(() => {
     const allMandatory: any[] = [];
-    
+
     mandatoryCourses.forEach(course => {
       if (!course.schedule) return;
-      
+
       const scheduleMatch = course.schedule.match(/(Mon|Tue|Wed|Thu|Fri|Sat|Sun).*?(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
-      
+
       if (scheduleMatch) {
         const days = course.schedule.match(/(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/g) || [];
         const startHour = scheduleMatch[2];
         const startMin = scheduleMatch[3];
         const endHour = scheduleMatch[4];
         const endMin = scheduleMatch[5];
-        
+
         days.forEach(day => {
           allMandatory.push({
             id: `${course.id}-${day}`,
@@ -462,7 +540,7 @@ export const ParentPortal = ({
         });
       }
     });
-    
+
     return allMandatory;
   }, []);
 
@@ -477,18 +555,19 @@ export const ParentPortal = ({
 
   return (
     <div className="min-h-screen bg-background pb-20">
-        <PortalHeader 
-          onLogout={onLogout} 
-          activeTab={activeTab}
-          onTabChange={(tab: string) => setActiveTab(tab as 'dashboard' | 'tuition' | 'afterschool' | 'summer' | 'event' | 'schoolbus' | 'transaction')}
-          cartItemCount={cartItems.length}
-          onGoToCart={handleGoToCart}
-          showCountdown={showCountdown}
-          onCountdownExpired={onCountdownExpired}
-          onCancelCountdown={onCancelCountdown}
-          additionalCourses={courseItemsCount}
-        />
-      
+      <PortalHeader
+        onLogout={onLogout}
+activeTab={activeTab}
+        onTabChange={(tab: string) => setActiveTab(tab as 'dashboard' | 'tuition' | 'afterschool' | 'summer' | 'event' | 'schoolbus' | 'transaction')}
+        cartItemCount={cartItems.length}
+        onGoToCart={handleGoToCart}
+        showCountdown={showCountdown}
+        onCountdownExpired={onCountdownExpired}
+        onCancelCountdown={onCancelCountdown}
+        additionalCourses={courseItemsCount}
+        unpaidInvoicesCount={unpaidInvoicesCount}
+      />
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {/* Campus Overview Banner with Student Switcher */}
         <div className="mb-6 p-3 sm:p-4 bg-gradient-to-r from-primary/10 to-education-blue/5 rounded-lg">
@@ -501,7 +580,7 @@ export const ParentPortal = ({
                     John Smith
                   </h2>
                 </div>
-                
+
                 {/* Student Switcher Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -551,9 +630,6 @@ export const ParentPortal = ({
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
-          </div>
-            <div className="hidden md:block">
-              <ChildrenOverview />
             </div>
           </div>
         </div>
@@ -566,25 +642,53 @@ export const ParentPortal = ({
               <GraduationCap className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{t('portal.dashboard')}</span>
             </TabsTrigger>
-            <TabsTrigger value="tuition" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+            <TabsTrigger value="tuition" className={cn(
+              "relative",
+              language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
+            )}>
               <DollarSign className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{t('portal.tuition')}</span>
+              {unpaidInvoicesCount > 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 w-5 flex items-center justify-center p-0 text-xs shrink-0">
+                  {unpaidInvoicesCount}
+                </Badge>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="afterschool" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+            <TabsTrigger value="afterschool" className={cn("relative", language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato')}>
               <Clock className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">ECA</span>
+              {categoryUnpaidCounts.eca > 0 && (
+                <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                  {categoryUnpaidCounts.eca}
+                </Badge>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="summer" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+            <TabsTrigger value="summer" className={cn("relative", language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato')}>
               <Sun className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{language === 'th' ? 'ทริปและกิจกรรม' : language === 'zh' ? '旅行和活动' : 'Trip & Activity'}</span>
+              {categoryUnpaidCounts.trip > 0 && (
+                <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                  {categoryUnpaidCounts.trip}
+                </Badge>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="event" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+            <TabsTrigger value="event" className={cn("relative", language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato')}>
               <Calendar className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{language === 'th' ? 'สอบ' : language === 'zh' ? '考试' : 'Exam'}</span>
+              {categoryUnpaidCounts.exam > 0 && (
+                <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                  {categoryUnpaidCounts.exam}
+                </Badge>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="schoolbus" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+            <TabsTrigger value="schoolbus" className={cn("relative", language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato')}>
               <Bus className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{language === 'th' ? 'รถรับส่ง' : language === 'zh' ? '校车' : 'School Bus'}</span>
+              {categoryUnpaidCounts.schoolbus > 0 && (
+                <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                  {categoryUnpaidCounts.schoolbus}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="transaction" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
               <Receipt className="h-4 w-4 md:mr-2" />
@@ -597,77 +701,111 @@ export const ParentPortal = ({
             <div className="flex gap-2 min-w-max">
               <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeTab === 'dashboard'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeTab === 'dashboard'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
               >
                 <GraduationCap className="h-4 w-4" />
                 Dashboard
               </button>
               <button
                 onClick={() => setActiveTab('tuition')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                className={cn(
+                  "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
                   activeTab === 'tuition'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+                )}
               >
                 <DollarSign className="h-4 w-4" />
-                {t('portal.tuition')}
+                <span className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
+                  {t('portal.tuition')}
+                </span>
+                {unpaidInvoicesCount > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                    {unpaidInvoicesCount}
+                  </Badge>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('afterschool')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                className={cn(
+                  "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
                   activeTab === 'afterschool'
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                  language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
+                )}
               >
                 <Clock className="h-4 w-4" />
                 ECA
+                {categoryUnpaidCounts.eca > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                    {categoryUnpaidCounts.eca}
+                  </Badge>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('summer')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                className={cn(
+                  "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
                   activeTab === 'summer'
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                  language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
+                )}
               >
                 <Sun className="h-4 w-4" />
                 {language === 'th' ? 'ทริปและกิจกรรม' : language === 'zh' ? '旅行和活动' : 'Trip & Activity'}
+                {categoryUnpaidCounts.trip > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                    {categoryUnpaidCounts.trip}
+                  </Badge>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('event')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                className={cn(
+                  "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
                   activeTab === 'event'
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                  language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
+                )}
               >
                 <Calendar className="h-4 w-4" />
                 {language === 'th' ? 'สอบ' : language === 'zh' ? '考试' : 'Exam'}
+                {categoryUnpaidCounts.exam > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                    {categoryUnpaidCounts.exam}
+                  </Badge>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('schoolbus')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                className={cn(
+                  "relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
                   activeTab === 'schoolbus'
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80',
+                  language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
+                )}
               >
                 <Bus className="h-4 w-4" />
                 {language === 'th' ? 'รถรับส่ง' : language === 'zh' ? '校车' : 'School Bus'}
+                {categoryUnpaidCounts.schoolbus > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                    {categoryUnpaidCounts.schoolbus}
+                  </Badge>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('transaction')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeTab === 'transaction'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeTab === 'transaction'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
               >
                 <Receipt className="h-4 w-4" />
                 {language === 'th' ? 'ประวัติ' : 'History'}
@@ -686,13 +824,19 @@ export const ParentPortal = ({
                   cards={[
                     {
                       id: 'total-due',
-                      title: language === 'th' ? 'รวมยอดค้างชำระ' : 'Total Due',
+                      title: language === 'th' ? 'รวมยอดใบแจ้งหนี้' : 'Total Invoiced',
                       value: formatCurrency(outstandingAmount),
-                      subtitle: `${allInvoices.filter(i => i.status === 'pending').length} ${t('portal.pending')}`,
+                      subtitle: `${outstandingInvoices.length} ${t('portal.pending')}`,
                       icon: DollarSign,
                       color: overdueCount > 0 ? 'destructive' : 'warning',
-                      badge: allInvoices.filter(i => i.status === 'pending').length || undefined,
-                      onClick: () => setActiveTab('tuition')
+                    },
+                    {
+                      id: 'overdue',
+                      title: language === 'th' ? 'เกินกำหนดชำระ' : 'Overdue',
+                      value: formatCurrency(overdueAmount),
+                      subtitle: `${overdueCount} ${language === 'th' ? 'รายการ' : 'Invoices'}`,
+                      icon: AlertCircle,
+                      color: 'destructive',
                     },
                     {
                       id: 'credit-note',
@@ -701,47 +845,54 @@ export const ParentPortal = ({
                       subtitle: t('portal.availableCredit'),
                       icon: Ticket,
                       color: 'info',
-                      onClick: () => setActiveTab('tuition')
+                      onClick: () => { setActiveTab('transaction'); setTransactionSubTab('creditNote'); }
                     },
                     {
                       id: 'receipts',
                       title: language === 'th' ? 'ใบเสร็จรับเงิน' : 'View Receipts',
-                      value: allReceipts.length.toString(),
+                      value: allReceipts.filter(r => r.student_id.toString() === selectedStudent).length.toString(),
                       subtitle: language === 'th' ? 'ใบเสร็จทั้งหมด' : 'Total Receipts',
                       icon: Receipt,
                       color: 'success',
-                      onClick: () => setActiveTab('transaction')
+                      onClick: () => { setActiveTab('transaction'); setTransactionSubTab('receipts'); }
                     }
                   ]}
                 />
               )
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <SummaryBox
-                  title={language === 'th' ? 'รวมยอดค้างชำระ' : language === 'zh' ? '总应付' : 'Total Due'}
+                  title={language === 'th' ? 'รวมยอดใบแจ้งหนี้' : language === 'zh' ? '总发票金额' : 'Total Invoiced'}
                   value={formatCurrency(outstandingAmount)}
-                  subtitle={`${allInvoices.filter(i => i.status === 'pending').length} ${t('portal.pending')}`}
+                  subtitle={`${outstandingInvoices.length} ${t('portal.pending')}`}
                   icon={FileText}
-                  color={overdueCount > 0 ? 'destructive' : 'warning'}
-                  onClick={() => setActiveTab('tuition')}
+                  color="warning"
                 />
-                
+
+                <SummaryBox
+                  title={language === 'th' ? 'เกินกำหนดชำระ' : 'Overdue'}
+                  value={formatCurrency(overdueAmount)}
+                  subtitle={`${overdueCount} ${language === 'th' ? 'รายการ' : 'Invoices'}`}
+                  icon={AlertCircle}
+                  color="destructive"
+                />
+
                 <SummaryBox
                   title={language === 'th' ? 'ใบลดหนี้' : 'Credit Note'}
                   value={formatCurrency(stats.creditBalance)}
                   subtitle={t('portal.availableCredit')}
                   icon={Ticket}
                   color="info"
-                  onClick={() => setActiveTab('tuition')}
+                  onClick={() => { setActiveTab('transaction'); setTransactionSubTab('creditNote'); }}
                 />
-                
+
                 <SummaryBox
                   title={language === 'th' ? 'ใบเสร็จรับเงิน' : 'View Receipts'}
-                  value={allReceipts.length}
+                  value={allReceipts.filter(r => r.student_id.toString() === selectedStudent).length.toString()}
                   subtitle={language === 'th' ? 'ใบเสร็จทั้งหมด' : 'Total Receipts'}
                   icon={Receipt}
                   color="success"
-                  onClick={() => setActiveTab('transaction')}
+                  onClick={() => { setActiveTab('transaction'); setTransactionSubTab('receipts'); }}
                 />
               </div>
             )}
@@ -754,7 +905,7 @@ export const ParentPortal = ({
                   {t('portal.upcomingDeadlines')}
                 </CardTitle>
                 <CardDescription className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-                  {t('portal.importantDates')} {t('portal.allStudents')}
+                  {t('portal.importantDates')} {mockStudents.find(s => s.id.toString() === selectedStudent)?.name || t('portal.allStudents')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -804,27 +955,60 @@ export const ParentPortal = ({
                     }
                   };
 
-                  // Group deadlines by type
-                  const groupedDeadlines = mockUpcomingDeadlines.reduce((acc, deadline) => {
-                    if (!acc[deadline.type]) {
-                      acc[deadline.type] = [];
-                    }
-                    acc[deadline.type].push(deadline);
-                    return acc;
-                  }, {} as Record<string, typeof mockUpcomingDeadlines>);
+                  // Get real data from allInvoices source and map to deadline format
+                  const realInvoicesForStudent = allInvoices.filter(inv =>
+                    (inv.status === 'pending' || inv.status === 'overdue') &&
+                    inv.student_id.toString() === selectedStudent
+                  );
 
-                  // Sort each group by due date
-                  Object.keys(groupedDeadlines).forEach(type => {
-                    groupedDeadlines[type].sort((a, b) => 
-                      new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-                    );
+                  const mappedDeadlines = realInvoicesForStudent.map(inv => {
+                    // Determine category type based on ID prefix
+                    let category = 'tuition';
+                    if (inv.id.startsWith('ECA-')) category = 'eca';
+                    else if (inv.id.startsWith('TRIP-')) category = 'trip';
+                    else if (inv.id.startsWith('EXAM-')) category = 'exam';
+                    else if (inv.id.startsWith('BUS-')) category = 'schoolbus';
+
+                    const student = mockStudents.find(s => s.id === inv.student_id);
+
+                    return {
+                      id: inv.id,
+                      title: inv.description,
+                      dueDate: inv.due_date,
+                      amount: inv.amount_due,
+                      status: inv.status,
+                      type: category,
+                      studentId: inv.student_id,
+                      studentName: student?.name || ''
+                    };
                   });
 
-                  // Define type order for consistent display
-                  const typeOrder = ['tuition', 'eca', 'trip', 'camp', 'exam', 'schoolbus'];
-                  const sortedTypes = typeOrder.filter(type => groupedDeadlines[type]?.length > 0);
+                  const sortOverdueFirst = (a: any, b: any) => {
+                    if (a.status === 'overdue' && b.status !== 'overdue') return -1;
+                    if (a.status !== 'overdue' && b.status === 'overdue') return 1;
+                    return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+                  };
 
-                  if (mockUpcomingDeadlines.length === 0) {
+                  // Group by Tab perspective (Tuition shows all, others show specific)
+                  const groupedDeadlines: Record<string, any[]> = {
+                    tuition: [...mappedDeadlines].sort(sortOverdueFirst),
+                    eca: mappedDeadlines.filter(d => d.type === 'eca').sort(sortOverdueFirst),
+                    trip: mappedDeadlines.filter(d => d.type === 'trip').sort(sortOverdueFirst),
+                    exam: mappedDeadlines.filter(d => d.type === 'exam').sort(sortOverdueFirst),
+                    schoolbus: mappedDeadlines.filter(d => d.type === 'schoolbus').sort(sortOverdueFirst),
+                  };
+
+                  // Define type order: types with overdue items first, then by original order
+                  const typeOrder = ['tuition', 'eca', 'trip', 'camp', 'exam', 'schoolbus'];
+                  const sortedTypes = typeOrder
+                    .filter(type => groupedDeadlines[type]?.length > 0)
+                    .sort((a, b) => {
+                      const aHasOverdue = groupedDeadlines[a]?.some(d => d.status === 'overdue') ? 0 : 1;
+                      const bHasOverdue = groupedDeadlines[b]?.some(d => d.status === 'overdue') ? 0 : 1;
+                      return aHasOverdue - bHasOverdue;
+                    });
+
+                  if (mappedDeadlines.length === 0) {
                     return (
                       <div className="text-center py-8 text-muted-foreground">
                         <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-30" />
@@ -843,9 +1027,9 @@ export const ParentPortal = ({
                         const totalAmount = deadlines.reduce((sum, d) => sum + d.amount, 0);
 
                         return (
-                          <AccordionItem 
-                            key={type} 
-                            value={type} 
+                          <AccordionItem
+                            key={type}
+                            value={type}
                             className="border rounded-lg px-1"
                           >
                             <AccordionTrigger className="px-3 py-3 hover:no-underline">
@@ -855,9 +1039,6 @@ export const ParentPortal = ({
                                   <span className={`font-medium ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                                     {getTypeLabel(type)}
                                   </span>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {deadlines.length}
-                                  </Badge>
                                 </div>
                                 <Badge className={`${getTypeBadgeColor(type)}`}>
                                   {formatCurrency(totalAmount)}
@@ -867,8 +1048,8 @@ export const ParentPortal = ({
                             <AccordionContent className="px-3 pb-3">
                               <div className="space-y-2">
                                 {deadlines.map((deadline, index) => (
-                                  <div 
-                                    key={deadline.id} 
+                                  <div
+                                    key={deadline.id}
                                     className={cn(
                                       "flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-muted/50 rounded-lg gap-2 cursor-pointer hover:bg-muted/70 transition-colors",
                                       isMobile && "animate-stagger-in opacity-0"
@@ -908,7 +1089,6 @@ export const ParentPortal = ({
               <div className="lg:col-span-7 space-y-4">
                 {(() => {
                   const tuitionInvoices = allInvoices.filter(invoice =>
-                    invoice.type === paymentPeriod &&
                     invoice.student_id.toString() === selectedStudent
                   );
                   const { unpaid, paid, unpaidTotal, paidTotal } = groupInvoicesByPaymentStatus(tuitionInvoices);
@@ -947,7 +1127,13 @@ export const ParentPortal = ({
                                     <InvoiceCard
                                       invoice={invoice}
                                       creditBalance={creditNote?.balance || 0}
-                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'tuition')}
+                                      onAddToCart={(invoiceId) => {
+                                        const type = invoiceId.startsWith('ECA-') ? 'eca' :
+                                          invoiceId.startsWith('TRIP-') ? 'trip' :
+                                            invoiceId.startsWith('EXAM-') ? 'exam' :
+                                              invoiceId.startsWith('BUS-') ? 'schoolbus' : 'tuition';
+                                        handleAddToCart(invoiceId, type);
+                                      }}
                                       studentName={student?.name}
                                     />
                                   </div>
@@ -997,7 +1183,13 @@ export const ParentPortal = ({
                                     <InvoiceCard
                                       invoice={invoice}
                                       creditBalance={creditNote?.balance || 0}
-                                      onAddToCart={(invoiceId) => handleAddToCart(invoiceId, 'tuition')}
+                                      onAddToCart={(invoiceId) => {
+                                        const type = invoiceId.startsWith('ECA-') ? 'eca' :
+                                          invoiceId.startsWith('TRIP-') ? 'trip' :
+                                            invoiceId.startsWith('EXAM-') ? 'exam' :
+                                              invoiceId.startsWith('BUS-') ? 'schoolbus' : 'tuition';
+                                        handleAddToCart(invoiceId, type);
+                                      }}
                                       studentName={student?.name}
                                     />
                                   </div>
@@ -1039,7 +1231,8 @@ export const ParentPortal = ({
               {/* Left 70% - Invoice List */}
               <div className="lg:col-span-7 space-y-4">
                 {(() => {
-                  const ecaInvoices = mockECAInvoices.filter(invoice =>
+                  const ecaInvoices = allInvoices.filter(invoice =>
+                    invoice.id.startsWith('ECA-') &&
                     invoice.student_id.toString() === selectedStudent
                   );
                   const { unpaid, paid, unpaidTotal, paidTotal } = groupInvoicesByPaymentStatus(ecaInvoices);
@@ -1170,7 +1363,8 @@ export const ParentPortal = ({
               {/* Left 70% - Invoice List */}
               <div className="lg:col-span-7 space-y-4">
                 {(() => {
-                  const tripInvoices = mockTripInvoices.filter(invoice =>
+                  const tripInvoices = allInvoices.filter(invoice =>
+                    invoice.id.startsWith('TRIP-') &&
                     invoice.student_id.toString() === selectedStudent
                   );
                   const { unpaid, paid, unpaidTotal, paidTotal } = groupInvoicesByPaymentStatus(tripInvoices);
@@ -1301,7 +1495,8 @@ export const ParentPortal = ({
               {/* Left 70% - Invoice List */}
               <div className="lg:col-span-7 space-y-4">
                 {(() => {
-                  const examInvoices = mockExamInvoices.filter(invoice =>
+                  const examInvoices = allInvoices.filter(invoice =>
+                    invoice.id.startsWith('EXAM-') &&
                     invoice.student_id.toString() === selectedStudent
                   );
                   const { unpaid, paid, unpaidTotal, paidTotal } = groupInvoicesByPaymentStatus(examInvoices);
@@ -1432,7 +1627,8 @@ export const ParentPortal = ({
               {/* Left 70% - Invoice List */}
               <div className="lg:col-span-7 space-y-4">
                 {(() => {
-                  const schoolBusInvoices = mockSchoolBusInvoices.filter(invoice =>
+                  const schoolBusInvoices = allInvoices.filter(invoice =>
+                    invoice.id.startsWith('BUS-') &&
                     invoice.student_id.toString() === selectedStudent
                   );
                   const { unpaid, paid, unpaidTotal, paidTotal } = groupInvoicesByPaymentStatus(schoolBusInvoices);
@@ -1563,11 +1759,10 @@ export const ParentPortal = ({
             <div className="flex gap-1 border-b">
               <button
                 onClick={() => setTransactionSubTab('receipts')}
-                className={`px-4 py-2 text-sm font-medium transition-colors relative ${
-                  transactionSubTab === 'receipts' 
-                    ? 'text-primary' 
-                    : 'text-muted-foreground hover:text-foreground'
-                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+                className={`px-4 py-2 text-sm font-medium transition-colors relative ${transactionSubTab === 'receipts'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+                  } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
               >
                 {t('portal.receipts')}
                 {transactionSubTab === 'receipts' && (
@@ -1576,11 +1771,10 @@ export const ParentPortal = ({
               </button>
               <button
                 onClick={() => setTransactionSubTab('creditNote')}
-                className={`px-4 py-2 text-sm font-medium transition-colors relative ${
-                  transactionSubTab === 'creditNote' 
-                    ? 'text-primary' 
-                    : 'text-muted-foreground hover:text-foreground'
-                } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+                className={`px-4 py-2 text-sm font-medium transition-colors relative ${transactionSubTab === 'creditNote'
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
+                  } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
               >
                 {t('creditNote.title')}
                 {transactionSubTab === 'creditNote' && (
@@ -1591,7 +1785,7 @@ export const ParentPortal = ({
 
             {/* Receipts Sub-tab */}
             {transactionSubTab === 'receipts' && (
-              <ReceiptList 
+              <ReceiptList
                 receipts={allReceipts}
                 onDownload={handleDownloadReceipt}
               />
@@ -1605,27 +1799,12 @@ export const ParentPortal = ({
         </Tabs>
       </main>
 
-      {/* Weekly Calendar View - Fixed Footer (Desktop: always show when afterschool, Mobile: controlled by toggle) */}
-      {activeTab === 'afterschool' && (!isMobile || isWeeklyScheduleOpen) && (
-        <WeeklyCalendarView 
-          courses={calendarCourses} 
-          mandatoryCourses={calendarMandatoryCourses}
-          students={calendarStudents}
-          onAddToCart={(courseId, studentId) => handleAddToCart(courseId, 'course', studentId)}
-          onRemoveFromCart={handleRemoveFromCart}
-          isMobile={isMobile}
-          onClose={() => setIsWeeklyScheduleOpen(false)}
-        />
-      )}
-
-      {/* Mobile Bottom Navigation */}
       <MobileBottomNav
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab as 'dashboard' | 'tuition' | 'afterschool' | 'summer' | 'event' | 'schoolbus' | 'transaction')}
         cartItemCount={cartItems.length}
         isSISBStudent={isSISBStudent}
-        onToggleWeeklySchedule={() => setIsWeeklyScheduleOpen(!isWeeklyScheduleOpen)}
-        isWeeklyScheduleOpen={isWeeklyScheduleOpen}
+        unpaidInvoicesCount={unpaidInvoicesCount}
       />
 
       {/* Mobile Cart Drawer */}
@@ -1646,16 +1825,16 @@ export const ParentPortal = ({
           onClick={() => setMobileCartOpen(true)}
           className={cn(
             "fixed bottom-20 right-4 z-50 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110 animate-scale-in",
-            cartItems.length > 0 
-              ? "bg-primary text-primary-foreground" 
+            cartItems.length > 0
+              ? "bg-primary text-primary-foreground"
               : "bg-muted text-muted-foreground opacity-70 hover:opacity-100 hover:bg-primary hover:text-primary-foreground",
             cartBounce && "animate-bounce"
           )}
         >
           <ShoppingCart className={cn("h-6 w-6", cartBounce && "animate-ping")} />
           {cartItems.length > 0 && (
-            <Badge 
-              variant="destructive" 
+            <Badge
+              variant="destructive"
               className={cn(
                 "absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 text-xs font-bold",
                 cartBounce && "animate-bounce"

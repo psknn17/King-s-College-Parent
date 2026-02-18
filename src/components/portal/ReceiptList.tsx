@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, Receipt, CreditCard, DollarSign, FileText, Calendar, ExternalLink, Clock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Download, Receipt, CreditCard, DollarSign, FileText, Calendar, Filter, Search, User, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Select,
@@ -39,7 +41,7 @@ interface Receipt {
   status: 'completed' | 'processing' | 'failed';
   description: string;
   reference_number: string;
-  type?: 'tuition' | 'activity' | 'camp' | 'event' | 'exam';
+  type?: 'tuition' | 'eca' | 'trip' | 'exam' | 'schoolbus';
   usedCreditNotes?: UsedCreditNote[];
 }
 
@@ -50,314 +52,316 @@ interface ReceiptListProps {
 
 export const ReceiptList = ({ receipts, onDownload }: ReceiptListProps) => {
   const { language, formatCurrency, t } = useLanguage();
-  const [selectedYear, setSelectedYear] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<string>("all");
   const [selectedType, setSelectedType] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<Date | undefined>(undefined);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 5;
 
-  // Extract unique years and students for filters
-  const years = Array.from(new Set(receipts.map(r => r.year))).sort((a, b) => b.localeCompare(a));
   const students = Array.from(new Set(receipts.map(r => ({ id: r.student_id, name: r.studentName }))))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const typeLabels: Record<string, string> = {
-    tuition: t('receipt.typeTuition'),
-    activity: t('receipt.typeActivity'),
-    camp: t('receipt.typeCamp'),
-    event: t('receipt.typeEvent'),
-    exam: t('receipt.typeExam'),
+  const fontClass = language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato';
+
+  const typeConfig: Record<string, { label: string; color: string }> = {
+    tuition:   { label: language === 'th' ? 'ค่าเทอม' : 'Tuition',        color: 'bg-blue-500/10 text-blue-700 border-blue-200' },
+    eca:       { label: 'ECA',                                              color: 'bg-purple-500/10 text-purple-700 border-purple-200' },
+    trip:      { label: language === 'th' ? 'ทริปและกิจกรรม' : 'Trip & Activity', color: 'bg-green-500/10 text-green-700 border-green-200' },
+    exam:      { label: language === 'th' ? 'สอบ' : 'Exam',               color: 'bg-pink-500/10 text-pink-700 border-pink-200' },
+    schoolbus: { label: language === 'th' ? 'รถรับส่ง' : 'School Bus',    color: 'bg-slate-500/10 text-slate-700 border-slate-200' },
   };
 
-  // Filter receipts based on selected filters
-  const filteredReceipts = receipts.filter(receipt => {
-    const yearMatch = selectedYear === "all" || receipt.year === selectedYear;
-    const studentMatch = selectedStudent === "all" || receipt.student_id.toString() === selectedStudent;
-    const typeMatch = selectedType === "all" || receipt.type === selectedType;
-    const monthMatch = !selectedMonth || (
-      new Date(receipt.paid_at).getMonth() === selectedMonth.getMonth() &&
-      new Date(receipt.paid_at).getFullYear() === selectedMonth.getFullYear()
-    );
-    return yearMatch && studentMatch && typeMatch && monthMatch;
+  const paymentConfig = {
+    credit_card:   { label: t('payment.creditCard'),   icon: CreditCard, color: 'bg-blue-500/10 text-blue-700 border-blue-200' },
+    bank_transfer: { label: t('payment.bankTransfer'), icon: DollarSign, color: 'bg-emerald-500/10 text-emerald-700 border-emerald-200' },
+    credit_note:   { label: t('payment.creditNote'),   icon: FileText,   color: 'bg-amber-500/10 text-amber-700 border-amber-200' },
+    cash:          { label: t('payment.cash'),         icon: DollarSign, color: 'bg-gray-500/10 text-gray-700 border-gray-200' },
+  };
+
+  const resetPage = () => setCurrentPage(1);
+
+  const filteredReceipts = receipts.filter(r => {
+    const matchSearch = searchQuery === '' ||
+      r.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.reference_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.invoice_id?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchStudent = selectedStudent === 'all' || r.student_id.toString() === selectedStudent;
+    const matchType = selectedType === 'all' || r.type === selectedType;
+    const matchMonth = !selectedMonth ||
+      (new Date(r.paid_at).getMonth() === selectedMonth.getMonth() &&
+       new Date(r.paid_at).getFullYear() === selectedMonth.getFullYear());
+    return matchSearch && matchStudent && matchType && matchMonth;
   });
 
-  const paymentMethodConfig = {
-    credit_card: { 
-      label: t('payment.creditCard'), 
-      icon: CreditCard, 
-      gradient: 'from-blue-500 to-purple-600' 
-    },
-    bank_transfer: { 
-      label: t('payment.bankTransfer'), 
-      icon: DollarSign, 
-      gradient: 'from-green-500 to-emerald-600' 
-    },
-    credit_note: { 
-      label: t('payment.creditNote'), 
-      icon: FileText, 
-      gradient: 'from-orange-500 to-amber-600' 
-    },
-    cash: { 
-      label: t('payment.cash'), 
-      icon: DollarSign, 
-      gradient: 'from-gray-500 to-slate-600' 
-    },
-  };
+  const totalPages = Math.max(1, Math.ceil(filteredReceipts.length / PAGE_SIZE));
+  const pagedReceipts = filteredReceipts.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+  const formatDate = (d: string) => new Date(d).toLocaleDateString(
+    language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US',
+    { year: 'numeric', month: 'short', day: 'numeric' }
+  );
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
+  const totalCreditUsed = (r: Receipt) =>
+    (r.usedCreditNotes || []).reduce((s, cn) => s + cn.amount, 0);
 
-  const getFontClass = () => {
-    return language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato';
-  };
+  const originalAmount = (r: Receipt) => r.amount + totalCreditUsed(r);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Filters */}
-      <div className="flex flex-wrap gap-4 items-center">
-        {/* Month Filter */}
-        <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${getFontClass()}`}>
-            {t('receipt.month')}:
-          </span>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-[160px] justify-start text-left font-normal",
-                  !selectedMonth && "text-muted-foreground"
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className={`text-sm font-medium ${fontClass}`}>
+              {t('creditNote.filters')}
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={language === 'th' ? 'ค้นหาใบเสร็จ (ชื่อ, เลขอ้างอิง...)' : 'Search receipts (name, ref no...)'}
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); resetPage(); }}
+              className={`pl-10 ${fontClass}`}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Month */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn("justify-start text-left font-normal", !selectedMonth && "text-muted-foreground", fontClass)}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {selectedMonth ? format(selectedMonth, "MMM yyyy") : t('receipt.pickMonth')}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedMonth}
+                  onSelect={(d) => { setSelectedMonth(d); resetPage(); }}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+                {selectedMonth && (
+                  <div className="p-2 border-t">
+                    <Button variant="ghost" size="sm" className="w-full" onClick={() => { setSelectedMonth(undefined); resetPage(); }}>
+                      {t('receipt.clearMonth')}
+                    </Button>
+                  </div>
                 )}
-              >
-                <Calendar className="mr-2 h-4 w-4" />
-                {selectedMonth ? format(selectedMonth, "MMM yyyy") : t('receipt.pickMonth')}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
-              <CalendarComponent
-                mode="single"
-                selected={selectedMonth}
-                onSelect={setSelectedMonth}
-                initialFocus
-                className="p-3 pointer-events-auto"
-              />
-              {selectedMonth && (
-                <div className="p-2 border-t">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => setSelectedMonth(undefined)}
-                  >
-                    {t('receipt.clearMonth')}
-                  </Button>
-                </div>
-              )}
-            </PopoverContent>
-          </Popover>
-        </div>
+              </PopoverContent>
+            </Popover>
 
-        {/* Student Filter */}
-        <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${getFontClass()}`}>
-            {t('receipt.student')}:
-          </span>
-          <Select value={selectedStudent} onValueChange={setSelectedStudent}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-background z-50">
-              <SelectItem value="all">{t('receipt.allStudents')}</SelectItem>
-              {students.map(student => (
-                <SelectItem key={student.id} value={student.id.toString()}>{student.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            {/* Student */}
+            <Select value={selectedStudent} onValueChange={(v) => { setSelectedStudent(v); resetPage(); }}>
+              <SelectTrigger className={fontClass}>
+                <SelectValue placeholder={t('receipt.allStudents')} />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                <SelectItem value="all">{t('receipt.allStudents')}</SelectItem>
+                {students.map(s => (
+                  <SelectItem key={s.id} value={s.id.toString()}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        {/* Type Filter */}
-        <div className="flex items-center gap-2">
-          <span className={`text-sm font-medium ${getFontClass()}`}>
-            {t('receipt.type')}:
-          </span>
-          <Select value={selectedType} onValueChange={setSelectedType}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-background z-50">
-              <SelectItem value="all">{t('receipt.allTypes')}</SelectItem>
-              <SelectItem value="tuition">{t('receipt.typeTuition')}</SelectItem>
-              <SelectItem value="activity">{t('receipt.typeActivity')}</SelectItem>
-              <SelectItem value="camp">{t('receipt.typeCamp')}</SelectItem>
-              <SelectItem value="event">{t('receipt.typeEvent')}</SelectItem>
-              <SelectItem value="exam">{t('receipt.typeExam')}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+            {/* Type */}
+            <Select value={selectedType} onValueChange={(v) => { setSelectedType(v); resetPage(); }}>
+              <SelectTrigger className={fontClass}>
+                <SelectValue placeholder={t('receipt.allTypes')} />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                <SelectItem value="all">{t('receipt.allTypes')}</SelectItem>
+                <SelectItem value="tuition">{language === 'th' ? 'ค่าเทอม' : 'Tuition'}</SelectItem>
+                <SelectItem value="eca">ECA</SelectItem>
+                <SelectItem value="trip">{language === 'th' ? 'ทริปและกิจกรรม' : 'Trip & Activity'}</SelectItem>
 
-        <div className={`text-sm text-muted-foreground ml-auto ${getFontClass()}`}>
-          {t('receipt.showing')} {filteredReceipts.length} {t('receipt.of')} {receipts.length}
-        </div>
+                <SelectItem value="exam">{language === 'th' ? 'สอบ' : 'Exam'}</SelectItem>
+                <SelectItem value="schoolbus">{language === 'th' ? 'รถรับส่ง' : 'School Bus'}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Count */}
+      <div className={`text-sm text-muted-foreground ${fontClass}`}>
+        {t('receipt.showing')} {filteredReceipts.length} {t('receipt.of')} {receipts.length}
       </div>
 
+      {/* List */}
       {filteredReceipts.length === 0 ? (
-        <div className={`text-center py-8 text-muted-foreground ${getFontClass()}`}>
-          <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>{t('portal.noReceipts')}</p>
-        </div>
+        <Card>
+          <CardContent className="text-center py-12">
+            <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-3 opacity-30" />
+            <p className={`text-muted-foreground ${fontClass}`}>{t('portal.noReceipts')}</p>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="space-y-4">
-          {filteredReceipts.map((receipt) => {
-            const PaymentIcon = paymentMethodConfig[receipt.payment_method].icon;
-            const iconGradient = paymentMethodConfig[receipt.payment_method].gradient;
+        <div className="space-y-3">
+          {pagedReceipts.map((receipt) => {
+            const PaymentIcon = paymentConfig[receipt.payment_method].icon;
+            const hasCreditNotes = (receipt.usedCreditNotes || []).length > 0;
+            const creditTotal = totalCreditUsed(receipt);
+            const origAmt = originalAmount(receipt);
 
             return (
-              <div
-                key={receipt.id}
-                className="bg-card rounded-lg border overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-                  {/* Left Section - Receipt Info */}
-                  <div className="p-4 border-b lg:border-b-0 lg:border-r">
-                    {/* Header with Student & Type Badge */}
-                    <div className="flex items-center justify-between mb-3">
-                      <Badge variant="secondary" className={`font-medium ${getFontClass()}`}>
-                        {receipt.studentName}
-                      </Badge>
-                      {receipt.type && (
-                        <Badge 
-                          variant="outline" 
-                          className={`${getFontClass()} ${
-                            receipt.type === 'tuition' ? 'border-blue-200 text-blue-700 bg-blue-50' :
-                            receipt.type === 'activity' ? 'border-purple-200 text-purple-700 bg-purple-50' :
-                            receipt.type === 'camp' ? 'border-green-200 text-green-700 bg-green-50' :
-                            receipt.type === 'event' ? 'border-orange-200 text-orange-700 bg-orange-50' :
-                            'border-pink-200 text-pink-700 bg-pink-50'
-                          }`}
-                        >
-                          {typeLabels[receipt.type]}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Receipt Details */}
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2.5 rounded-lg bg-gradient-to-br ${iconGradient} flex-shrink-0`}>
-                        <Receipt className="h-5 w-5 text-white" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-semibold text-base ${getFontClass()}`}>
-                          {receipt.description}
-                        </p>
-                        <p className={`text-sm text-muted-foreground ${getFontClass()}`}>
-                          Ref: {receipt.reference_number}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Amount & Payment Method */}
-                    <div className="mt-4 flex items-center justify-between">
-                      <div>
-                        <p className={`text-2xl font-bold ${getFontClass()}`}>
-                          {formatCurrency(receipt.amount)}
-                        </p>
-                        <p className={`text-sm text-muted-foreground ${getFontClass()}`}>
-                          {formatDate(receipt.paid_at)}
-                        </p>
-                      </div>
-                      <Badge 
-                        variant="outline" 
-                        className={`gap-1.5 px-3 py-1 ${
-                          receipt.payment_method === 'credit_card' ? 'border-blue-200 text-blue-700 bg-blue-50' :
-                          receipt.payment_method === 'bank_transfer' ? 'border-green-200 text-green-700 bg-green-50' :
-                          receipt.payment_method === 'credit_note' ? 'border-orange-200 text-orange-700 bg-orange-50' :
-                          'border-gray-200 text-gray-700 bg-gray-50'
-                        }`}
-                      >
-                        <PaymentIcon className="h-4 w-4" />
-                        <span className={`text-sm ${getFontClass()}`}>
-                          {paymentMethodConfig[receipt.payment_method].label}
-                        </span>
-                      </Badge>
-                    </div>
-
-                    {/* Download Button */}
-                    {receipt.status === 'completed' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={`mt-4 gap-2 ${getFontClass()}`}
-                        onClick={() => onDownload?.(receipt.id)}
-                      >
-                        <Download className="h-4 w-4" />
-                        {t('portal.downloadReceipt')}
-                      </Button>
+              <Card key={receipt.id} className="overflow-hidden">
+                {/* Header strip */}
+                <div className="px-4 py-2 bg-muted/40 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-mono text-sm font-semibold text-muted-foreground`}>
+                      {receipt.reference_number}
+                    </span>
+                    {receipt.invoice_id && (
+                      <span className={`text-xs text-muted-foreground/70 ${fontClass}`}>
+                        · {language === 'th' ? 'ใบแจ้งหนี้' : 'Invoice'}: <span className="font-mono">{receipt.invoice_id}</span>
+                      </span>
                     )}
+                    {receipt.type && (
+                      <Badge className={`text-xs ${typeConfig[receipt.type]?.color}`}>
+                        {typeConfig[receipt.type]?.label}
+                      </Badge>
+                    )}
+                    <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-xs">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      {language === 'th' ? 'ชำระแล้ว' : 'Paid'}
+                    </Badge>
                   </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <User className="h-3 w-3" />
+                    <span className={fontClass}>{receipt.studentName}</span>
+                  </div>
+                </div>
 
-                  {/* Right Section - Transaction Timeline */}
-                  <div className="p-4 bg-muted/30">
-                    <h4 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${getFontClass()}`}>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      {t('receipt.transactionTimeline')}
-                    </h4>
+                <CardContent className="p-4">
+                  <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                    {/* Left: description + date + download */}
+                    <div className="flex-1 space-y-2">
+                      <p className={`font-semibold text-base ${fontClass}`}>{receipt.description}</p>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span className={fontClass}>{formatDate(receipt.paid_at)}</span>
+                      </div>
 
-                    {receipt.usedCreditNotes && receipt.usedCreditNotes.length > 0 ? (
-                      <div className="space-y-3">
-                        {receipt.usedCreditNotes.map((cn, index) => (
-                          <div 
-                            key={cn.id}
-                            className="relative pl-4 before:absolute before:left-0 before:top-2 before:w-2 before:h-2 before:bg-amber-500 before:rounded-full"
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div>
-                                <p className={`text-sm font-medium ${getFontClass()}`}>
-                                  {t('receipt.usedCreditNote')}
-                                </p>
-                                <p className={`text-xs text-muted-foreground ${getFontClass()}`}>
-                                  {formatDateTime(cn.used_at)}
-                                </p>
-                              </div>
-                              <span className={`text-sm font-semibold text-amber-600 ${getFontClass()}`}>
+                      {/* Credit notes used */}
+                      {hasCreditNotes && (
+                        <div className="mt-3 space-y-1.5">
+                          <p className={`text-xs font-medium text-muted-foreground ${fontClass}`}>
+                            {language === 'th' ? 'ใบลดหนี้ที่ใช้' : 'Credit notes applied'}
+                          </p>
+                          {receipt.usedCreditNotes!.map((cn) => (
+                            <div key={cn.id} className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/20 rounded-md px-2.5 py-1.5">
+                              <FileText className="h-3 w-3 text-amber-600 flex-shrink-0" />
+                              <span className={`font-mono text-xs font-semibold text-amber-700`}>{cn.id}</span>
+                              <span className={`text-xs text-amber-600/70 ${fontClass}`}>
+                                {language === 'th' ? 'หัก' : 'deducted'}
+                              </span>
+                              <span className={`text-xs font-bold text-amber-700 ml-auto ${fontClass}`}>
                                 -{formatCurrency(cn.amount)}
                               </span>
                             </div>
-                            <div className="mt-1 flex items-center gap-1">
-                              <span className={`text-xs text-muted-foreground ${getFontClass()}`}>
-                                ({cn.id})
-                              </span>
-                              <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                            </div>
-                            <p className={`text-xs text-muted-foreground mt-0.5 ${getFontClass()}`}>
-                              {t('receipt.appliedTo')} {cn.appliedTo}
-                            </p>
+                          ))}
+                        </div>
+                      )}
+
+                      {receipt.status === 'completed' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={`mt-2 gap-2 ${fontClass}`}
+                          onClick={() => onDownload?.(receipt.id)}
+                        >
+                          <Download className="h-4 w-4" />
+                          {t('portal.downloadReceipt')}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Right: amount breakdown */}
+                    <div className="sm:text-right flex-shrink-0 space-y-1 min-w-[170px]">
+                      {hasCreditNotes && (
+                        <>
+                          <div className="flex sm:justify-end items-center gap-2">
+                            <span className={`text-xs text-muted-foreground ${fontClass}`}>
+                              {language === 'th' ? 'ยอดเต็ม' : 'Original'}
+                            </span>
+                            <span className={`text-sm text-muted-foreground line-through ${fontClass}`}>
+                              {formatCurrency(origAmt)}
+                            </span>
                           </div>
-                        ))}
+                          <div className="flex sm:justify-end items-center gap-2">
+                            <span className={`text-xs text-muted-foreground ${fontClass}`}>
+                              {language === 'th' ? 'หักใบลดหนี้' : 'Credit applied'}
+                            </span>
+                            <span className={`text-sm font-medium text-amber-600 ${fontClass}`}>
+                              -{formatCurrency(creditTotal)}
+                            </span>
+                          </div>
+                          <div className="border-t pt-1" />
+                        </>
+                      )}
+
+                      <div className="flex sm:justify-end items-center gap-2">
+                        <span className={`text-xs text-muted-foreground ${fontClass}`}>
+                          {hasCreditNotes
+                            ? (language === 'th' ? 'ชำระจริง' : 'Paid')
+                            : (language === 'th' ? 'ยอดชำระ' : 'Amount paid')}
+                        </span>
+                        <span className={`font-bold text-xl text-foreground ${fontClass}`}>
+                          {formatCurrency(receipt.amount)}
+                        </span>
                       </div>
-                    ) : (
-                      <p className={`text-sm text-muted-foreground italic ${getFontClass()}`}>
-                        {t('receipt.noCreditNotesUsed')}
-                      </p>
-                    )}
+
+                      <div className="flex sm:justify-end mt-1">
+                        <Badge className={`gap-1 text-xs ${paymentConfig[receipt.payment_method].color}`}>
+                          <PaymentIcon className="h-3 w-3" />
+                          <span className={fontClass}>{paymentConfig[receipt.payment_method].label}</span>
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             );
           })}
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className={`gap-1.5 ${fontClass}`}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {language === 'th' ? 'ก่อนหน้า' : 'Previous'}
+              </Button>
+              <span className={`text-sm text-muted-foreground ${fontClass}`}>
+                {language === 'th'
+                  ? `หน้า ${currentPage} / ${totalPages}`
+                  : `Page ${currentPage} of ${totalPages}`}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`gap-1.5 ${fontClass}`}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                {language === 'th' ? 'ถัดไป' : 'Next'}
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

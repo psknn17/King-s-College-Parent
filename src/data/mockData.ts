@@ -65,7 +65,7 @@ export const mockUpcomingDeadlines = [
   },
   {
     id: "deadline-camp-001",
-    type: "camp" as const,
+    type: "trip" as const,
     title: "Summer Art Camp Registration",
     studentName: "Emma Johnson",
     studentId: 1,
@@ -75,7 +75,7 @@ export const mockUpcomingDeadlines = [
   },
   {
     id: "deadline-camp-002",
-    type: "camp" as const,
+    type: "trip" as const,
     title: "Robotics Engineering Camp",
     studentName: "Liam Johnson",
     studentId: 2,
@@ -198,30 +198,30 @@ export const mockInvoices = [
     student_id: 1,
     type: "Termly" as const,
     amount_due: 155000,
-    due_date: "2024-08-15",
+    due_date: "2025-08-15",
     status: "paid" as const,
-    description: "Tuition Fee 2024-2025",
-    term: "Term 1 (August - November 2024)"
+    description: "Tuition Fee 2025-2026",
+    term: "Term 1 (August - November 2025)"
   },
   {
     id: "INV-2024-002",
     student_id: 1,
     type: "Termly" as const,
     amount_due: 155000,
-    due_date: "2024-12-15",
-    status: "pending" as const,
-    description: "Tuition Fee 2024-2025",
-    term: "Term 2 (December 2024 - March 2025)"
+    due_date: "2026-01-15",
+    status: "overdue" as const,
+    description: "Tuition Fee 2025-2026",
+    term: "Term 2 (December 2025 - March 2026)"
   },
   {
     id: "INV-2024-003",
     student_id: 1,
     type: "Termly" as const,
     amount_due: 155000,
-    due_date: "2025-04-15",
+    due_date: "2026-04-15",
     status: "pending" as const,
-    description: "Tuition Fee 2024-2025",
-    term: "Term 3 (April - July 2025)"
+    description: "Tuition Fee 2025-2026",
+    term: "Term 3 (April - July 2026)"
   },
 
   // Liam Johnson (student_id: 2) - Termly Invoices
@@ -230,30 +230,30 @@ export const mockInvoices = [
     student_id: 2,
     type: "Termly" as const,
     amount_due: 155000,
-    due_date: "2024-08-15",
+    due_date: "2025-08-15",
     status: "paid" as const,
-    description: "Tuition Fee 2024-2025",
-    term: "Term 1 (August - November 2024)"
+    description: "Tuition Fee 2025-2026",
+    term: "Term 1 (August - November 2025)"
   },
   {
     id: "INV-2024-005",
     student_id: 2,
     type: "Termly" as const,
     amount_due: 155000,
-    due_date: "2024-12-15",
+    due_date: "2025-12-15",
     status: "paid" as const,
-    description: "Tuition Fee 2024-2025",
-    term: "Term 2 (December 2024 - March 2025)"
+    description: "Tuition Fee 2025-2026",
+    term: "Term 2 (December 2025 - March 2026)"
   },
   {
     id: "INV-2024-006",
     student_id: 2,
     type: "Termly" as const,
     amount_due: 155000,
-    due_date: "2025-04-15",
+    due_date: "2026-04-15",
     status: "pending" as const,
-    description: "Tuition Fee 2024-2025",
-    term: "Term 3 (April - July 2025)"
+    description: "Tuition Fee 2025-2026",
+    term: "Term 3 (April - July 2026)"
   },
 
   // Sophia Johnson (student_id: 3) - Termly Invoices
@@ -262,30 +262,30 @@ export const mockInvoices = [
     student_id: 3,
     type: "Termly" as const,
     amount_due: 155000,
-    due_date: "2024-08-15",
+    due_date: "2025-08-15",
     status: "paid" as const,
-    description: "Tuition Fee 2024-2025",
-    term: "Term 1 (August - November 2024)"
+    description: "Tuition Fee 2025-2026",
+    term: "Term 1 (August - November 2025)"
   },
   {
     id: "INV-2024-008",
     student_id: 3,
     type: "Termly" as const,
     amount_due: 155000,
-    due_date: "2024-12-15",
+    due_date: "2026-01-10",
     status: "overdue" as const,
-    description: "Tuition Fee 2024-2025",
-    term: "Term 2 (December 2024 - March 2025)"
+    description: "Tuition Fee 2025-2026",
+    term: "Term 2 (December 2025 - March 2026)"
   },
   {
     id: "INV-2024-009",
     student_id: 3,
     type: "Termly" as const,
     amount_due: 155000,
-    due_date: "2025-04-15",
+    due_date: "2026-04-15",
     status: "pending" as const,
-    description: "Tuition Fee 2024-2025",
-    term: "Term 3 (April - July 2025)"
+    description: "Tuition Fee 2025-2026",
+    term: "Term 3 (April - July 2026)"
   }
 ];
 
@@ -296,20 +296,20 @@ export const mockECAInvoices = [
     student_id: 1,
     type: "Termly" as const,
     amount_due: 12000,
-    due_date: "2024-12-20",
-    status: "pending" as const,
+    due_date: "2026-01-20",
+    status: "overdue" as const,
     description: "After School Activities - Term 2",
-    term: "Term 2 (December 2024 - March 2025)"
+    term: "Term 2 (December 2025 - March 2026)"
   },
   {
     id: "ECA-2024-002",
     student_id: 2,
     type: "Termly" as const,
     amount_due: 15000,
-    due_date: "2024-12-20",
+    due_date: "2026-03-15",
     status: "pending" as const,
     description: "After School Activities - Term 2",
-    term: "Term 2 (December 2024 - March 2025)"
+    term: "Term 2 (December 2025 - March 2026)"
   }
 ];
 
@@ -320,20 +320,20 @@ export const mockTripInvoices = [
     student_id: 1,
     type: "Termly" as const,
     amount_due: 8500,
-    due_date: "2025-01-10",
+    due_date: "2026-03-10",
     status: "pending" as const,
     description: "Educational Trip - Science Museum",
-    term: "Term 2 (December 2024 - March 2025)"
+    term: "Term 2 (December 2025 - March 2026)"
   },
   {
     id: "TRIP-2024-002",
     student_id: 2,
     type: "Termly" as const,
     amount_due: 8500,
-    due_date: "2025-01-10",
-    status: "pending" as const,
+    due_date: "2026-02-05",
+    status: "overdue" as const,
     description: "Educational Trip - Science Museum",
-    term: "Term 2 (December 2024 - March 2025)"
+    term: "Term 2 (December 2025 - March 2026)"
   }
 ];
 
@@ -344,20 +344,20 @@ export const mockExamInvoices = [
     student_id: 1,
     type: "Termly" as const,
     amount_due: 5000,
-    due_date: "2024-12-15",
-    status: "pending" as const,
+    due_date: "2026-02-10",
+    status: "overdue" as const,
     description: "Cambridge Assessment English",
-    term: "Term 2 (December 2024 - March 2025)"
+    term: "Term 2 (December 2025 - March 2026)"
   },
   {
     id: "EXAM-2024-002",
     student_id: 2,
     type: "Termly" as const,
     amount_due: 6500,
-    due_date: "2024-12-15",
+    due_date: "2026-03-20",
     status: "pending" as const,
     description: "IELTS Preparation & Test",
-    term: "Term 2 (December 2024 - March 2025)"
+    term: "Term 2 (December 2025 - March 2026)"
   }
 ];
 
@@ -368,20 +368,20 @@ export const mockSchoolBusInvoices = [
     student_id: 1,
     type: "Termly" as const,
     amount_due: 18000,
-    due_date: "2024-12-01",
+    due_date: "2025-12-01",
     status: "paid" as const,
-    description: "School Bus Service - Term 2",
-    term: "Term 2 (December 2024 - March 2025)"
+    description: "School Bus Service - Term 1",
+    term: "Term 1 (August - November 2025)"
   },
   {
     id: "BUS-2024-002",
     student_id: 2,
     type: "Termly" as const,
     amount_due: 18000,
-    due_date: "2024-12-01",
+    due_date: "2026-03-01",
     status: "pending" as const,
     description: "School Bus Service - Term 2",
-    term: "Term 2 (December 2024 - March 2025)"
+    term: "Term 2 (December 2025 - March 2026)"
   }
 ];
 
@@ -472,7 +472,9 @@ export const mockCreditNoteHistory = [
     type: "refund" as const,
     status: "used" as const,
     academicYear: "2023",
-    usedAmount: 2500
+    usedAmount: 2500,
+    appliedToInvoice: "INV-2024-002",
+    appliedAt: "2024-01-10"
   },
   {
     id: "CN-2023-012",
@@ -484,7 +486,9 @@ export const mockCreditNoteHistory = [
     type: "overpayment" as const,
     status: "used" as const,
     academicYear: "2023",
-    usedAmount: 1800
+    usedAmount: 1800,
+    appliedToInvoice: "INV-2024-005",
+    appliedAt: "2024-02-01"
   }
 ];
 
@@ -1190,82 +1194,82 @@ export const mockReceipts = [
       {
         id: "CN-2024-001",
         amount: 500,
-        appliedTo: "September Tuition",
-        used_at: "2024-08-28T17:30:00Z"
+        appliedTo: "Tuition Fee - Term 1 2025-2026",
+        used_at: "2025-08-28T17:30:00Z"
       },
       {
         id: "CN-2024-002",
         amount: 300,
-        appliedTo: "September Tuition",
-        used_at: "2024-08-28T17:30:00Z"
+        appliedTo: "Tuition Fee - Term 1 2025-2026",
+        used_at: "2025-08-28T17:30:00Z"
       }
     ],
-    invoice_id: "INV-2024-004",
+    invoice_id: "INV-2024-001",
     student_id: 1,
     studentName: "Emma Johnson",
-    year: "2024",
-    amount: 3200,
+    year: "2025",
+    amount: 154200,
     payment_method: "credit_card" as const,
-    paid_at: "2024-08-28T10:30:00Z",
+    paid_at: "2025-08-28T10:30:00Z",
     receipt_url: "#",
     status: "completed" as const,
-    description: "September Tuition Payment",
-    reference_number: "TXN-20240828-001"
+    description: "Tuition Fee - Term 1 2025-2026",
+    reference_number: "TXN-20250828-001"
   },
   {
     id: "REC-2024-002",
-    type: "activity" as const,
+    type: "eca" as const,
     usedCreditNotes: [
       {
         id: "CN-2024-003",
         amount: 200,
-        appliedTo: "Art Class Registration",
-        used_at: "2024-08-25T14:00:00Z"
+        appliedTo: "After School Activities - Term 1",
+        used_at: "2025-08-25T14:00:00Z"
       }
     ],
-    invoice_id: "INV-2024-005",
+    invoice_id: "ECA-2023-002",
     student_id: 2,
     studentName: "Liam Johnson",
-    year: "2024",
-    amount: 850,
+    year: "2025",
+    amount: 14800,
     payment_method: "bank_transfer" as const,
-    paid_at: "2024-08-25T14:15:00Z",
+    paid_at: "2025-08-25T14:15:00Z",
     receipt_url: "#",
     status: "completed" as const,
-    description: "Activity Registration Fee",
-    reference_number: "TXN-20240825-002"
+    description: "After School Activities - Term 1",
+    reference_number: "TXN-20250825-002"
   },
   {
     id: "REC-2024-003",
-    type: "camp" as const,
+    type: "trip" as const,
     usedCreditNotes: [],
-    invoice_id: "INV-2024-006",
+    invoice_id: "TRIP-2023-001",
     student_id: 3,
     studentName: "Sophia Johnson",
-    year: "2024",
-    amount: 450,
+    year: "2025",
+    amount: 8500,
     payment_method: "credit_note" as const,
-    paid_at: "2024-08-20T09:45:00Z",
+    paid_at: "2025-09-20T09:45:00Z",
     receipt_url: "#",
     status: "completed" as const,
-    description: "Summer Camp Registration",
-    reference_number: "TXN-20240820-003"
+    description: "Educational Trip - Science Museum",
+    reference_number: "TXN-20250920-003"
   },
   {
     id: "REC-2024-004",
     type: "tuition" as const,
     usedCreditNotes: [],
-    invoice_id: "INV-2024-007",
-    student_id: 1,
-    studentName: "Emma Johnson",
-    year: "2024",
-    amount: 12800,
+    invoice_id: "INV-2024-005",
+    student_id: 2,
+    studentName: "Liam Johnson",
+    year: "2025",
+    amount: 155000,
     payment_method: "credit_card" as const,
-    paid_at: "2024-08-30T16:20:00Z",
+    paid_at: "2025-12-15T16:20:00Z",
     receipt_url: "#",
-    status: "processing" as const,
-    description: "Tuition Fee",
-    reference_number: "TXN-20240830-004"
+    status: "completed" as const,
+    description: "Tuition Fee - Term 2 2025-2026",
+    reference_number: "TXN-20251215-004"
   },
   {
     id: "REC-2023-001",
@@ -1274,14 +1278,14 @@ export const mockReceipts = [
     invoice_id: "INV-2023-001",
     student_id: 2,
     studentName: "Liam Johnson",
-    year: "2023",
-    amount: 2800,
+    year: "2024",
+    amount: 155000,
     payment_method: "bank_transfer" as const,
-    paid_at: "2023-08-15T10:30:00Z",
+    paid_at: "2024-08-15T10:30:00Z",
     receipt_url: "#",
     status: "completed" as const,
-    description: "August Tuition Payment",
-    reference_number: "TXN-20230815-001"
+    description: "Tuition Fee - Term 1 2024-2025",
+    reference_number: "TXN-20240815-001"
   },
   {
     id: "REC-2023-002",
@@ -1290,21 +1294,156 @@ export const mockReceipts = [
       {
         id: "CN-2023-001",
         amount: 1000,
-        appliedTo: "Yearly Tuition 2023",
-        used_at: "2023-07-20T14:00:00Z"
+        appliedTo: "Tuition Fee - Term 1 2024-2025",
+        used_at: "2024-07-20T14:00:00Z"
       }
     ],
     invoice_id: "INV-2023-002",
     student_id: 3,
     studentName: "Sophia Johnson",
-    year: "2023",
-    amount: 15500,
+    year: "2024",
+    amount: 154000,
     payment_method: "credit_card" as const,
-    paid_at: "2023-07-20T14:15:00Z",
+    paid_at: "2024-07-20T14:15:00Z",
     receipt_url: "#",
     status: "completed" as const,
-    description: "Yearly Tuition Fee 2023-2024",
-    reference_number: "TXN-20230720-002"
+    description: "Tuition Fee - Term 1 2024-2025",
+    reference_number: "TXN-20240720-002"
+  },
+  {
+    id: "REC-2025-001",
+    type: "eca" as const,
+    usedCreditNotes: [],
+    invoice_id: "ECA-2024-001",
+    student_id: 1,
+    studentName: "Emma Johnson",
+    year: "2025",
+    amount: 12000,
+    payment_method: "bank_transfer" as const,
+    paid_at: "2025-08-10T09:00:00Z",
+    receipt_url: "#",
+    status: "completed" as const,
+    description: "After School Activities - Term 1",
+    reference_number: "TXN-20250810-001"
+  },
+  {
+    id: "REC-2025-002",
+    type: "trip" as const,
+    usedCreditNotes: [],
+    invoice_id: "TRIP-2024-001",
+    student_id: 1,
+    studentName: "Emma Johnson",
+    year: "2025",
+    amount: 8500,
+    payment_method: "credit_card" as const,
+    paid_at: "2025-09-05T11:30:00Z",
+    receipt_url: "#",
+    status: "completed" as const,
+    description: "Educational Trip - Science Museum",
+    reference_number: "TXN-20250905-002"
+  },
+  {
+    id: "REC-2025-003",
+    type: "exam" as const,
+    usedCreditNotes: [
+      {
+        id: "CN-2023-015",
+        amount: 500,
+        appliedTo: "Cambridge Assessment English",
+        used_at: "2025-10-01T08:00:00Z"
+      }
+    ],
+    invoice_id: "EXAM-2024-001",
+    student_id: 1,
+    studentName: "Emma Johnson",
+    year: "2025",
+    amount: 4500,
+    payment_method: "credit_card" as const,
+    paid_at: "2025-10-01T08:15:00Z",
+    receipt_url: "#",
+    status: "completed" as const,
+    description: "Cambridge Assessment English",
+    reference_number: "TXN-20251001-003"
+  },
+  {
+    id: "REC-2025-004",
+    type: "schoolbus" as const,
+    usedCreditNotes: [],
+    invoice_id: "BUS-2024-001",
+    student_id: 1,
+    studentName: "Emma Johnson",
+    year: "2025",
+    amount: 18000,
+    payment_method: "bank_transfer" as const,
+    paid_at: "2025-12-01T10:00:00Z",
+    receipt_url: "#",
+    status: "completed" as const,
+    description: "School Bus Service - Term 1",
+    reference_number: "TXN-20251201-004"
+  },
+  {
+    id: "REC-2025-005",
+    type: "eca" as const,
+    usedCreditNotes: [],
+    invoice_id: "ECA-2024-002",
+    student_id: 2,
+    studentName: "Liam Johnson",
+    year: "2025",
+    amount: 15000,
+    payment_method: "credit_card" as const,
+    paid_at: "2025-08-12T14:00:00Z",
+    receipt_url: "#",
+    status: "completed" as const,
+    description: "After School Activities - Term 1",
+    reference_number: "TXN-20250812-005"
+  },
+  {
+    id: "REC-2025-006",
+    type: "exam" as const,
+    usedCreditNotes: [],
+    invoice_id: "EXAM-2024-002",
+    student_id: 2,
+    studentName: "Liam Johnson",
+    year: "2025",
+    amount: 6500,
+    payment_method: "bank_transfer" as const,
+    paid_at: "2025-10-15T09:30:00Z",
+    receipt_url: "#",
+    status: "completed" as const,
+    description: "IELTS Preparation & Test",
+    reference_number: "TXN-20251015-006"
+  },
+  {
+    id: "REC-2025-007",
+    type: "trip" as const,
+    usedCreditNotes: [],
+    invoice_id: "TRIP-2024-002",
+    student_id: 2,
+    studentName: "Liam Johnson",
+    year: "2025",
+    amount: 8500,
+    payment_method: "bank_transfer" as const,
+    paid_at: "2025-09-20T13:00:00Z",
+    receipt_url: "#",
+    status: "completed" as const,
+    description: "Educational Trip - Science Museum",
+    reference_number: "TXN-20250920-007"
+  },
+  {
+    id: "REC-2025-008",
+    type: "schoolbus" as const,
+    usedCreditNotes: [],
+    invoice_id: "BUS-2024-002",
+    student_id: 2,
+    studentName: "Liam Johnson",
+    year: "2025",
+    amount: 18000,
+    payment_method: "credit_card" as const,
+    paid_at: "2025-12-03T10:00:00Z",
+    receipt_url: "#",
+    status: "completed" as const,
+    description: "School Bus Service - Term 1",
+    reference_number: "TXN-20251203-008"
   }
 ];
 
