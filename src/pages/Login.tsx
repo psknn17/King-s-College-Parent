@@ -6,8 +6,8 @@ import { SignUp } from "@/components/auth/SignUp";
 import { ForgotPassword } from "@/components/auth/ForgotPassword";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LogoBadge } from "@/components/LogoBadge";
 import schoolBuilding from "@/assets/school-building-new.jpg";
-import sisbLogo from "@/assets/kings-college-logo.jpg";
 
 interface LoginProps {
   onLogin: () => void;
@@ -84,11 +84,7 @@ export const Login = ({ onLogin }: LoginProps) => {
         
         {/* SISB Logo - Top Left */}
         <div className="absolute top-6 left-6 z-10">
-          <img 
-            src={sisbLogo} 
-            alt="SISB International Schools"
-            className="h-20 w-auto"
-          />
+          <LogoBadge size="md" />
         </div>
         
         {/* Content - Bottom Center */}
@@ -113,11 +109,7 @@ export const Login = ({ onLogin }: LoginProps) => {
           
           {/* Hero Content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-10 px-6">
-            <img 
-              src={sisbLogo} 
-              alt="SISB International Schools"
-              className="h-20 w-auto mb-4 drop-shadow-lg animate-scale-in"
-            />
+            <LogoBadge size="md" className="mb-4 animate-scale-in" />
             <h1 className="text-2xl font-bold tracking-tight drop-shadow-md animate-fade-in" style={{ animationDelay: '0.1s' }}>
               Parent Portal
             </h1>
@@ -137,14 +129,8 @@ export const Login = ({ onLogin }: LoginProps) => {
           >
             <CardHeader className="text-center space-y-3 pb-6 pt-8 lg:pt-6 lg:pb-8">
               {/* Desktop: Show logo in card */}
-              <div className="hidden lg:block mb-6">
-                <div className="mx-auto flex items-center justify-center">
-                  <img
-                    src={sisbLogo}
-                    alt="SISB International Schools"
-                    className="h-32 w-auto"
-                  />
-                </div>
+              <div className="hidden lg:flex mb-6 justify-center">
+                <LogoBadge size="lg" />
               </div>
               
               <div className="space-y-2">

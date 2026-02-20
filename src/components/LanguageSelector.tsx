@@ -11,8 +11,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 const getFontClassForLanguage = (langCode: string) => {
   switch (langCode) {
     case 'th': return 'font-sukhumvit';
-    case 'en': return 'font-lato';
-    case 'zh': return 'font-noto-sc';
     default: return 'font-lato';
   }
 };
@@ -20,7 +18,6 @@ const getFontClassForLanguage = (langCode: string) => {
 const languages = [
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
   { code: 'th', name: 'Thai', nativeName: 'ไทย', flag: '🇹🇭' },
-  { code: 'zh', name: 'Chinese', nativeName: '中文', flag: '🇨🇳' },
 ];
 
 export const LanguageSelector = () => {
@@ -51,7 +48,7 @@ export const LanguageSelector = () => {
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
-            onClick={() => setLanguage(lang.code as 'en' | 'th' | 'zh')}
+            onClick={() => setLanguage(lang.code as 'en' | 'th')}
             className={`gap-3 cursor-pointer p-3 ${getFontClassForLanguage(lang.code)} ${
               currentLanguage.code === lang.code ? 'bg-accent' : ''
             }`}
