@@ -5,39 +5,40 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, ArrowRight, Loader2 } from "lucide-react";
+import { Mail, ArrowRight, Loader2, Lock, Eye, EyeOff } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LoginFormProps {
-  onSubmitEmail: (email: string) => void;
+  onSubmitEmail: (email: string, password: string) => void;
   onSignUp: () => void;
+  onForgotPassword: () => void;
 }
 
-export const LoginForm = ({ onSubmitEmail, onSignUp }: LoginFormProps) => {
+export const LoginForm = ({ onSubmitEmail, onSignUp, onForgotPassword }: LoginFormProps) => {
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { t } = useLanguage();
 
-  const emailSchema = z.object({
+  const loginSchema = z.object({
     email: z.string().email(t('auth.errors.emailInvalid')),
+    password: z.string().min(1, t('auth.errors.passwordRequired')),
   });
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<{ email: string }>({
-    resolver: zodResolver(emailSchema),
+  } = useForm<{ email: string; password: string }>({
+    resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: { email: string }) => {
+  const onSubmit = async (data: { email: string; password: string }) => {
     setLoading(true);
-    setEmail(data.email);
-    
+
     // Mock sending OTP delay
     setTimeout(() => {
       setLoading(false);
-      onSubmitEmail(data.email);
+      onSubmitEmail(data.email, data.password);
     }, 1500);
   };
 
@@ -55,8 +56,7 @@ export const LoginForm = ({ onSubmitEmail, onSignUp }: LoginFormProps) => {
               type="email"
               placeholder={t('auth.emailPlaceholder')}
               {...register("email")}
-              className={`h-12 pl-12 text-base rounded-xl border-border/60 
-                bg-background/50 lg:bg-background
+              className={`h-12 pl-11 text-[15px] rounded-lg border-gray-300
                 focus:ring-2 focus:ring-primary/20 focus:border-primary
                 transition-all duration-200
                 ${errors.email ? "border-red-500 focus:ring-red-500/20 focus:border-red-500" : ""}`}
@@ -69,13 +69,51 @@ export const LoginForm = ({ onSubmitEmail, onSignUp }: LoginFormProps) => {
           )}
         </div>
 
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-sm font-medium text-foreground">
+            {t('auth.password')}
+          </Label>
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/60" />
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              {...register("password")}
+              className={`h-12 pl-11 pr-12 text-[15px] rounded-lg border-gray-300
+                focus:ring-2 focus:ring-primary/20 focus:border-primary
+                transition-all duration-200
+                ${errors.password ? "border-red-500 focus:ring-red-500/20 focus:border-red-500" : ""}`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+          {errors.password && (
+            <p className="text-sm text-red-500 flex items-center gap-1 mt-1">
+              {errors.password.message}
+            </p>
+          )}
+          <div className="text-right">
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-sm text-primary hover:text-primary/80 font-medium underline underline-offset-4 transition-colors"
+            >
+              {t('auth.forgotPassword')}?
+            </button>
+          </div>
+        </div>
+
         <Button
           type="submit"
-          className="w-full h-12 text-base font-semibold rounded-xl
-            bg-gradient-to-r from-primary to-primary/85
-            hover:from-primary/95 hover:to-primary/80
-            shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30
-            transition-all duration-300
+          className="w-full h-12 text-[15px] font-semibold rounded-lg
+            bg-blue-500 hover:bg-blue-600
+            transition-colors duration-200
             active:scale-[0.98]
             group"
           disabled={isSubmitting || loading}

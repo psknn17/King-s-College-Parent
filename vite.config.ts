@@ -19,4 +19,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ['embla-carousel-react', 'embla-carousel-reactive-utils'],
+  },
+  build: {
+    commonjsOptions: {
+      include: [/embla-carousel/, /node_modules/],
+    },
+  },
 }));

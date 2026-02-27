@@ -348,7 +348,7 @@ export const CartView = ({ items, creditNotes, onRemoveItem, onCheckout, onBack 
                     {totalCreditApplied > 0 && (
                       <div className="flex justify-between text-sm">
                         <span className={`text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                          {language === 'th' ? 'ใบลดหนี้' : 'Credit Applied'}
+                          {language === 'th' ? 'Credit note(s) applied' : 'Credit note(s) applied'}
                         </span>
                         <span className={`font-medium text-green-600 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                           - {formatCurrency(totalCreditApplied)}

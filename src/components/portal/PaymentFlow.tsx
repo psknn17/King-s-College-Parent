@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   Calendar, 
   DollarSign, 
@@ -128,9 +130,11 @@ export const PaymentFlow = ({ invoice, creditBalance, onPaymentSuccess, onCancel
                       <span className={`font-medium ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                         {t(method.name)}
                       </span>
-                      <div className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                        {method.fee === 0 ? t('portal.free') : `+${method.fee}${method.currency}`}
-                      </div>
+                      {method.fee !== 0 && (
+                        <div className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                          +{method.fee}{method.currency}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

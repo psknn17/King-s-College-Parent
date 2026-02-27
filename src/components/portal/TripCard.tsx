@@ -45,10 +45,10 @@ export const TripCard = ({
 
   const formatDeadline = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US', {
-      year: 'numeric',
+    return date.toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-GB', {
+      day: 'numeric',
       month: 'short',
-      day: 'numeric'
+      year: 'numeric'
     });
   };
 

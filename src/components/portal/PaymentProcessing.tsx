@@ -37,14 +37,16 @@ const paymentMethodIcons = {
   bank_counter: Building2
 };
 
-export const PaymentProcessing = ({ 
-  paymentMethod, 
-  amount, 
-  onPaymentComplete, 
-  onCancel 
+export const PaymentProcessing = ({
+  paymentMethod,
+  amount,
+  onPaymentComplete,
+  onCancel
 }: PaymentProcessingProps) => {
   const [step, setStep] = useState<'confirm' | 'processing' | 'success' | 'failed'>('confirm');
   const [countdown, setCountdown] = useState(10); // 10 seconds max
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const { language, formatCurrency, t } = useLanguage();
 
   const IconComponent = paymentMethodIcons[paymentMethod.id as keyof typeof paymentMethodIcons] || CreditCard;
@@ -54,26 +56,9 @@ export const PaymentProcessing = ({
       const timer = setInterval(() => {
         setCountdown(prev => {
           if (prev <= 1) {
-            // Always succeed after countdown for demo
-            setStep('success');
-            const paymentData = {
-              receiptId: `RCP-${Date.now()}`,
-              amount: amount,
-              paymentDate: new Date().toISOString(),
-              paymentMethod: language === 'th' ? paymentMethod.name :
-                             language === 'zh' ? (paymentMethod.id === 'credit_card' ? '信用卡' :
-                                                  paymentMethod.id === 'promptpay' ? 'PromptPay' :
-                                                  paymentMethod.id === 'wechat' ? '微信支付' :
-                                                  paymentMethod.id === 'alipay' ? '支付宝' :
-                                                  paymentMethod.id === 'bank_counter' ? '银行账户' : paymentMethod.name) :
-                             (paymentMethod.id === 'credit_card' ? 'Credit Card' :
-                              paymentMethod.id === 'promptpay' ? 'PromptPay' :
-                              paymentMethod.id === 'wechat' ? 'WeChat Pay' :
-                              paymentMethod.id === 'alipay' ? 'Alipay' :
-                              paymentMethod.id === 'bank_counter' ? 'Bank Account' : paymentMethod.name),
-              type: 'activities'
-            };
-            onPaymentComplete(true, paymentData);
+            // Simulate payment processing with potential failure
+            // In production, this would be an actual API call
+            processPayment();
             return 0;
           }
           return prev - 1;
@@ -84,8 +69,73 @@ export const PaymentProcessing = ({
     }
   }, [step, amount, onPaymentComplete, paymentMethod.name, t]);
 
+  const processPayment = async () => {
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // TODO: Replace with actual payment gateway API call
+      // const response = await paymentGatewayAPI.processPayment({
+      //   amount,
+      //   paymentMethod: paymentMethod.id,
+      //   currency: paymentMethod.currency
+      // });
+
+      // Simulate 10% chance of failure for testing error handling
+      // Remove this in production
+      const shouldFail = Math.random() < 0.1 && retryCount < 2;
+
+      if (shouldFail) {
+        throw new Error(language === 'th' ? 'การเชื่อมต่อหมดเวลา' :
+                       language === 'zh' ? '连接超时' : 'Connection timeout');
+      }
+
+      // Payment successful
+      setStep('success');
+      const paymentData = {
+        receiptId: `RCP-${Date.now()}`,
+        amount: amount,
+        paymentDate: new Date().toISOString(),
+        paymentMethod: language === 'th' ? paymentMethod.name :
+                       language === 'zh' ? (paymentMethod.id === 'credit_card' ? '信用卡' :
+                                            paymentMethod.id === 'promptpay' ? 'PromptPay' :
+                                            paymentMethod.id === 'wechat' ? '微信支付' :
+                                            paymentMethod.id === 'alipay' ? '支付宝' :
+                                            paymentMethod.id === 'bank_counter' ? '银行账户' : paymentMethod.name) :
+                       (paymentMethod.id === 'credit_card' ? 'Credit Card' :
+                        paymentMethod.id === 'promptpay' ? 'PromptPay' :
+                        paymentMethod.id === 'wechat' ? 'WeChat Pay' :
+                        paymentMethod.id === 'alipay' ? 'Alipay' :
+                        paymentMethod.id === 'bank_counter' ? 'Bank Account' : paymentMethod.name),
+        type: 'activities'
+      };
+      onPaymentComplete(true, paymentData);
+    } catch (err) {
+      console.error('Payment processing error:', err);
+      const errorMessage = err instanceof Error ? err.message :
+        (language === 'th' ? 'เกิดข้อผิดพลาดในการชำระเงิน' :
+         language === 'zh' ? '支付处理出错' : 'Payment processing error');
+      setError(errorMessage);
+      setStep('failed');
+    }
+  };
+
   const handleConfirmPayment = () => {
+    if (amount <= 0) {
+      setError(language === 'th' ? 'จำนวนเงินไม่ถูกต้อง' :
+              language === 'zh' ? '金额无效' : 'Invalid amount');
+      return;
+    }
+    setError(null);
     setStep('processing');
+    setCountdown(10);
+  };
+
+  const handleRetry = () => {
+    setRetryCount(prev => prev + 1);
+    setError(null);
+    setStep('confirm');
+    setCountdown(10);
   };
 
   const formatTime = (seconds: number) => {
@@ -231,18 +281,33 @@ export const PaymentProcessing = ({
           <h3 className={`text-xl font-bold ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
             {language === 'th' ? 'ชำระเงินไม่สำเร็จ' : language === 'zh' ? '支付失败' : 'Payment Failed'}
           </h3>
-          <p className={`text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-            {language === 'th' ? 'หมดเวลาการชำระเงิน กรุณาลองใหม่อีกครั้ง' : language === 'zh' ? '支付超时，请重试' : 'Payment timeout, please try again'}
-          </p>
+          <div className="p-3 bg-destructive/10 rounded-lg">
+            <p className={`text-sm text-destructive ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+              {error || (language === 'th' ? 'หมดเวลาการชำระเงิน กรุณาลองใหม่อีกครั้ง' :
+                        language === 'zh' ? '支付超时，请重试' : 'Payment timeout, please try again')}
+            </p>
+          </div>
+          {retryCount > 0 && (
+            <p className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+              {language === 'th' ? `ความพยายามครั้งที่: ${retryCount}` :
+               language === 'zh' ? `尝试次数: ${retryCount}` : `Retry attempt: ${retryCount}`}
+            </p>
+          )}
           <div className="flex gap-3">
             <Button variant="outline" onClick={onCancel} className="flex-1">
               <ArrowLeft className="h-4 w-4 mr-2" />
               {language === 'th' ? 'กลับ' : language === 'zh' ? '返回' : 'Back'}
             </Button>
-            <Button onClick={() => setStep('confirm')} className="flex-1">
+            <Button onClick={handleRetry} className="flex-1" disabled={retryCount >= 3}>
               {language === 'th' ? 'ลองใหม่' : language === 'zh' ? '重试' : 'Try Again'}
             </Button>
           </div>
+          {retryCount >= 3 && (
+            <p className={`text-xs text-destructive ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+              {language === 'th' ? 'หากยังมีปัญหา กรุณาติดต่อฝ่ายสนับสนุน' :
+               language === 'zh' ? '如仍有问题，请联系客服' : 'If the problem persists, please contact support'}
+            </p>
+          )}
         </CardContent>
       </Card>
     );
@@ -282,15 +347,24 @@ export const PaymentProcessing = ({
         </div>
 
         {step === 'confirm' && (
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={onCancel} className="flex-1">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {language === 'th' ? 'กลับ' : language === 'zh' ? '返回' : 'Back'}
-            </Button>
-            <Button onClick={handleConfirmPayment} className="flex-1">
-              {language === 'th' ? 'ยืนยันการชำระเงิน' : language === 'zh' ? '确认支付' : 'Confirm Payment'}
-            </Button>
-          </div>
+          <>
+            {error && (
+              <div className="p-3 bg-destructive/10 rounded-lg">
+                <p className={`text-sm text-destructive ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                  {error}
+                </p>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={onCancel} className="flex-1">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {language === 'th' ? 'กลับ' : language === 'zh' ? '返回' : 'Back'}
+              </Button>
+              <Button onClick={handleConfirmPayment} className="flex-1" disabled={amount <= 0}>
+                {language === 'th' ? 'ยืนยันการชำระเงิน' : language === 'zh' ? '确认支付' : 'Confirm Payment'}
+              </Button>
+            </div>
+          </>
         )}
 
         {step === 'processing' && (

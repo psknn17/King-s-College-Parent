@@ -37,9 +37,10 @@ export const ReceiptCard = ({ receipt, onDownload }: ReceiptCardProps) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
+    const locale = language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-GB';
+    return new Date(dateString).toLocaleDateString(locale, {
       day: 'numeric',
+      month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'

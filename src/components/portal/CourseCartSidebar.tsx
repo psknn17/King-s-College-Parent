@@ -271,13 +271,6 @@ export const CourseCartSidebar = ({ items, onRemoveItem, onCheckout, onClearAll,
                   </Button>
                 )}
                 
-                <Button 
-                  onClick={onCheckout} 
-                  className={`w-full h-11 text-base ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
-                  disabled={allItems.length === 0}
-                >
-                  {language === 'th' ? 'ดำเนินการชำระเงิน' : 'Proceed to Payment'}
-                </Button>
               </div>
             </>
           )}

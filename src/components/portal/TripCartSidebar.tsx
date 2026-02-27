@@ -225,13 +225,6 @@ export const TripCartSidebar = ({ items, onRemoveItem, onCheckout, onClearAll, c
                   </Button>
                 )}
                 
-                <Button 
-                  onClick={onCheckout} 
-                  className={`w-full h-11 text-base ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
-                  disabled={items.length === 0}
-                >
-                  {language === 'th' ? 'ดำเนินการชำระเงิน' : 'Proceed to Payment'}
-                </Button>
               </div>
             </>
           )}

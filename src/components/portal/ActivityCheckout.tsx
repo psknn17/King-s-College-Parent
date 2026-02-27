@@ -45,9 +45,6 @@ interface ActivityCheckoutProps {
 const paymentMethods = [
   { id: 'credit_card', name: 'บัตรเครดิต', icon: CreditCard, fee: 2.9, currency: '%' },
   { id: 'promptpay', name: 'พร้อมเพย์', icon: QrCode, fee: 0, currency: '฿' },
-  { id: 'wechat', name: 'WeChat Pay', icon: MessageCircle, fee: 1.5, currency: '%' },
-  { id: 'alipay', name: 'Alipay', icon: Wallet, fee: 1.5, currency: '%' },
-  { id: 'bank_counter', name: 'บัญชีธนาคาร', icon: Building2, fee: 25, currency: '฿' }
 ];
 
 export const ActivityCheckout = ({
@@ -133,9 +130,9 @@ export const ActivityCheckout = ({
     <div className="max-w-4xl mx-auto">
       <PaymentProgressBar currentStep={2} />
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         {/* Left Column - Payment Method Selection Only */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-3 space-y-8">
           {/* Payment Method Selection */}
           <div className="space-y-4">
             <h2 className={`text-2xl font-bold ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
@@ -167,9 +164,11 @@ export const ActivityCheckout = ({
                         method.id === 'alipay' ? 'Alipay' :
                         method.id === 'bank_counter' ? 'Bank Account' : method.name)}
                     </span>
-                    <div className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                      {method.fee === 0 ? t('portal.free') : `+${method.fee}${method.currency}`}
-                    </div>
+                    {method.fee !== 0 && (
+                      <div className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                        +{method.fee}{method.currency}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -223,7 +222,7 @@ export const ActivityCheckout = ({
         </div>
 
         {/* Right Column - Payment Summary */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-2">
           <Card className="sticky top-6">
             <CardHeader>
               <CardTitle className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{t('portal.paymentSummary')}</CardTitle>
@@ -231,7 +230,9 @@ export const ActivityCheckout = ({
             <CardContent className="space-y-4">
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{t('portal.subtotal')} ({items.length} {t('portal.items')})</span>
+                  <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                    {language === 'th' ? `เลือก ${items.length} รายการ` : language === 'zh' ? `已选 ${items.length} 项` : `${items.length} items selected`}
+                  </span>
                   <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{formatCurrency(subtotalAmount)}</span>
                 </div>
                 
@@ -242,19 +243,18 @@ export const ActivityCheckout = ({
                   </div>
                 )}
                 
-                <div className="flex justify-between">
-                  <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{t('portal.paymentFee')} ({language === 'th' ? selectedPaymentMethod.name :
-                       language === 'zh' ? (selectedPaymentMethod.id === 'credit_card' ? '信用卡' :
-                                          selectedPaymentMethod.id === 'promptpay' ? 'PromptPay' :
-                                          selectedPaymentMethod.id === 'wechat' ? '微信支付' :
-                                          selectedPaymentMethod.id === 'alipay' ? '支付宝' :
-                                          selectedPaymentMethod.id === 'bank_counter' ? '银行账户' : selectedPaymentMethod.name) :
-                       (selectedPaymentMethod.id === 'credit_card' ? 'Credit Card' :
-                        selectedPaymentMethod.id === 'promptpay' ? 'PromptPay' :
-                        selectedPaymentMethod.id === 'wechat' ? 'WeChat Pay' :
-                        selectedPaymentMethod.id === 'alipay' ? 'Alipay' :
-                        selectedPaymentMethod.id === 'bank_counter' ? 'Bank Account' : selectedPaymentMethod.name)})</span>
-                  <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{formatCurrency(paymentFee)}</span>
+                <div className="flex justify-between items-start gap-4">
+                  <div className={`flex flex-col ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                    <span>{'Bank fee'}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ({language === 'th' ? selectedPaymentMethod.name :
+                        language === 'zh' ? (selectedPaymentMethod.id === 'credit_card' ? '信用卡' :
+                                             selectedPaymentMethod.id === 'promptpay' ? 'PromptPay' : selectedPaymentMethod.name) :
+                        (selectedPaymentMethod.id === 'credit_card' ? 'Credit Card' :
+                         selectedPaymentMethod.id === 'promptpay' ? 'PromptPay' : selectedPaymentMethod.name)})
+                    </span>
+                  </div>
+                  <span className={`shrink-0 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{formatCurrency(paymentFee)}</span>
                 </div>
                 
                 <Separator />

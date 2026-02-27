@@ -17,9 +17,6 @@ interface MobileFilterSectionProps {
   showDayFilter?: boolean;
   showStudentFilter?: boolean;
   searchPlaceholder?: string;
-  showWeeklyScheduleButton?: boolean;
-  onToggleWeeklySchedule?: () => void;
-  isWeeklyScheduleOpen?: boolean;
 }
 export const MobileFilterSection = ({
   searchValue,
@@ -31,9 +28,6 @@ export const MobileFilterSection = ({
   showDayFilter = false,
   showStudentFilter = true,
   searchPlaceholder,
-  showWeeklyScheduleButton = false,
-  onToggleWeeklySchedule,
-  isWeeklyScheduleOpen = false
 }: MobileFilterSectionProps) => {
   const [studentSheetOpen, setStudentSheetOpen] = useState(false);
   const {
@@ -74,59 +68,48 @@ export const MobileFilterSection = ({
     if (onDayFilterChange) onDayFilterChange("all");
   };
   return <div className="space-y-3 animate-fade-in-up">
-      {/* Full Width Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder={searchPlaceholder || (language === 'th' ? 'ค้นหา...' : 'Search...')} value={searchValue} onChange={e => onSearchChange(e.target.value)} className={cn("pl-10 pr-4 h-11 w-full bg-background border-border", "focus:ring-2 focus:ring-primary/20 transition-all duration-200", fontClass)} />
-        {searchValue && <Button variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0" onClick={() => onSearchChange("")}>
-            <X className="h-4 w-4" />
-          </Button>}
-      </div>
+    {/* Full Width Search Bar */}
+    <div className="relative">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input placeholder={searchPlaceholder || (language === 'th' ? 'ค้นหา...' : 'Search...')} value={searchValue} onChange={e => onSearchChange(e.target.value)} className={cn("pl-10 pr-4 h-11 w-full bg-background border-border", "focus:ring-2 focus:ring-primary/20 transition-all duration-200", fontClass)} />
+      {searchValue && <Button variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0" onClick={() => onSearchChange("")}>
+        <X className="h-4 w-4" />
+      </Button>}
+    </div>
 
-      {/* Quick Filters Row - Student (ซ้าย) | Day (ขวา) */}
-      {(showStudentFilter || showDayFilter) && <div className="flex gap-2 items-center">
-          {/* Student Filter - ด้านซ้าย */}
-          {showStudentFilter && <Button variant="outline" className={cn("flex-1 justify-between h-10 min-w-0", selectedStudent && "border-primary/50 bg-primary/5")} onClick={() => setStudentSheetOpen(true)}>
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-base shrink-0">{selectedStudent?.avatar || '👥'}</span>
-                <span className={cn("truncate text-sm", fontClass)}>
-                  {selectedStudent?.name || (language === 'th' ? 'ทั้งหมด' : 'All')}
-                </span>
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-            </Button>}
+    {/* Quick Filters Row - Student (ซ้าย) | Day (ขวา) */}
+    {(showStudentFilter || showDayFilter) && <div className="flex gap-2 items-center">
+      {/* Student Filter - ด้านซ้าย */}
+      {showStudentFilter && <Button variant="outline" className={cn("flex-1 justify-between h-10 min-w-0", selectedStudent && "border-primary/50 bg-primary/5")} onClick={() => setStudentSheetOpen(true)}>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-base shrink-0">{selectedStudent?.avatar || '👥'}</span>
+          <span className={cn("truncate text-sm", fontClass)}>
+            {selectedStudent?.name || (language === 'th' ? 'ทั้งหมด' : 'All')}
+          </span>
+        </div>
+        <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+      </Button>}
 
-          {/* Day Filter - ด้านขวา */}
-          {showDayFilter && <Select value={dayFilter} onValueChange={onDayFilterChange}>
-              <SelectTrigger className={cn("flex-1 h-10 min-w-0", dayFilter !== "all" && "border-primary/50 bg-primary/5")}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-background border">
-                {dayOptions.map(option => <SelectItem key={option.value} value={option.value}>
-                    <span className={fontClass}>{option.label}</span>
-                  </SelectItem>)}
-              </SelectContent>
-            </Select>}
+      {/* Day Filter - ด้านขวา */}
+      {showDayFilter && <Select value={dayFilter} onValueChange={onDayFilterChange}>
+        <SelectTrigger className={cn("flex-1 h-10 min-w-0", dayFilter !== "all" && "border-primary/50 bg-primary/5")}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="bg-background border">
+          {dayOptions.map(option => <SelectItem key={option.value} value={option.value}>
+            <span className={fontClass}>{option.label}</span>
+          </SelectItem>)}
+        </SelectContent>
+      </Select>}
 
-          {/* Clear Filters Button */}
-          {activeFiltersCount > 0}
-        </div>}
+      {/* Clear Filters Button */}
+      {activeFiltersCount > 0}
+    </div>}
 
-      {/* Weekly Schedule Button */}
-      {showWeeklyScheduleButton && <Button variant={isWeeklyScheduleOpen ? "default" : "outline"} className={cn("w-full justify-between h-11 transition-all duration-200", isWeeklyScheduleOpen && "bg-primary text-primary-foreground")} onClick={onToggleWeeklySchedule}>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            <span className={fontClass}>
-              {language === 'th' ? 'ปฏิทินรายสัปดาห์' : 'Weekly Schedule'}
-            </span>
-          </div>
-          <ChevronUp className={cn("h-4 w-4 transition-transform duration-300", !isWeeklyScheduleOpen && "rotate-180")} />
-        </Button>}
-
-      {/* Student Filter Sheet */}
-      <StudentFilterSheet open={studentSheetOpen} onOpenChange={setStudentSheetOpen} selectedStudent={selectedStudent} onStudentChange={student => {
+    {/* Student Filter Sheet */}
+    <StudentFilterSheet open={studentSheetOpen} onOpenChange={setStudentSheetOpen} selectedStudent={selectedStudent} onStudentChange={student => {
       onStudentChange?.(student);
       setStudentSheetOpen(false);
     }} />
-    </div>;
+  </div>;
 };

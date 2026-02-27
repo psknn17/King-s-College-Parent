@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, DollarSign, AlertCircle, CheckCircle } from "lucide-react";
+import { Calendar, AlertCircle, CheckCircle, Download } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { generateInvoicePDF } from "@/utils/pdfGenerator";
 
 interface InvoiceCardProps {
   invoice: {
@@ -32,10 +33,10 @@ export const InvoiceCard = ({ invoice, creditBalance = 0, onAddToCart, studentNa
   };
 
   const formatDate = (dateString: string) => {
-    const locale = language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US';
+    const locale = language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-GB';
     return new Date(dateString).toLocaleDateString(locale, {
-      month: 'short',
       day: 'numeric',
+      month: 'short',
       year: 'numeric'
     });
   };
@@ -82,14 +83,6 @@ export const InvoiceCard = ({ invoice, creditBalance = 0, onAddToCart, studentNa
             </span>
           </div>
           
-          {creditBalance > 0 && invoice.status !== 'paid' && (
-            <div className="flex items-center justify-between text-sm">
-              <span className={`text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{t('invoice.availableCredit')}:</span>
-              <span className={`text-finance-green font-medium ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                {formatCurrency(creditBalance)}
-              </span>
-            </div>
-          )}
         </div>
 
         {invoice.status !== 'paid' && (
@@ -100,8 +93,8 @@ export const InvoiceCard = ({ invoice, creditBalance = 0, onAddToCart, studentNa
                 <span>{t('invoice.canPayWithCredit')}</span>
               </div>
             )}
-            
-            <Button 
+
+            <Button
               className={`w-full ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
               onClick={() => onAddToCart?.(invoice.id)}
               variant={isOverdue ? "destructive" : "default"}
@@ -111,6 +104,26 @@ export const InvoiceCard = ({ invoice, creditBalance = 0, onAddToCart, studentNa
             </Button>
           </div>
         )}
+
+        <div className="pt-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className={`w-full ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
+            onClick={() => generateInvoicePDF({
+              id: invoice.id,
+              description: invoice.description,
+              amount_due: invoice.amount_due,
+              due_date: invoice.due_date,
+              status: invoice.status,
+              term: invoice.term,
+              studentName: studentName,
+            })}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {language === 'th' ? 'ดาวน์โหลด PDF' : language === 'zh' ? '下载 PDF' : 'Download PDF'}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

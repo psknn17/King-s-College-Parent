@@ -21,10 +21,10 @@ export const PaymentSuccess = ({ studentName, paymentData, onBackToMain }: Payme
   const { language, formatCurrency, t } = useLanguage();
 
   const formatDate = (dateString: string) => {
-    const locale = language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-US';
+    const locale = language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-GB';
     return new Date(dateString).toLocaleDateString(locale, {
       day: 'numeric',
-      month: 'numeric',
+      month: 'long',
       year: 'numeric'
     });
   };

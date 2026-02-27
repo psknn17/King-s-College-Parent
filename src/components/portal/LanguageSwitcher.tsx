@@ -11,7 +11,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 const languages = [
   { code: 'en', name: 'English', flag: '🇺🇸', nativeName: 'English' },
   { code: 'th', name: 'Thai', flag: '🇹🇭', nativeName: 'ไทย' },
-  { code: 'zh', name: 'Chinese', flag: '🇨🇳', nativeName: '中文' },
 ];
 
 export const LanguageSwitcher = () => {
@@ -19,7 +18,7 @@ export const LanguageSwitcher = () => {
   const currentLanguage = languages.find(lang => lang.code === language) || languages[0];
 
   const handleLanguageChange = (langCode: string) => {
-    setLanguage(langCode as 'en' | 'th' | 'zh');
+    setLanguage(langCode as 'en' | 'th');
   };
 
   return (
