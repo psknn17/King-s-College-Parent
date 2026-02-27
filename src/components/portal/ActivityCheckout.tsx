@@ -101,7 +101,7 @@ export const ActivityCheckout = ({
   if (showPaymentProcessing) {
     return (
       <div className="max-w-4xl mx-auto">
-        <PaymentProgressBar currentStep={2} />
+        <PaymentProgressBar currentStep={2} onStepClick={(step) => { if (step === 1) onCancel(); }} />
         <PaymentProcessing
           paymentMethod={selectedPaymentMethod}
           amount={totalAmount}
@@ -128,7 +128,7 @@ export const ActivityCheckout = ({
 
   return (
     <div className="max-w-4xl mx-auto">
-      <PaymentProgressBar currentStep={2} />
+      <PaymentProgressBar currentStep={2} onStepClick={(step) => { if (step === 1) onCancel(); }} />
       
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
         {/* Left Column - Payment Method Selection Only */}

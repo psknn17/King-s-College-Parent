@@ -2,9 +2,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PaymentProgressBarProps {
   currentStep: 1 | 2 | 3;
+  onStepClick?: (step: number) => void;
 }
 
-export const PaymentProgressBar = ({ currentStep }: PaymentProgressBarProps) => {
+export const PaymentProgressBar = ({ currentStep, onStepClick }: PaymentProgressBarProps) => {
   const { language, t } = useLanguage();
 
   const getStepLabel = (stepNumber: number) => {
@@ -35,19 +36,22 @@ export const PaymentProgressBar = ({ currentStep }: PaymentProgressBarProps) => 
         {steps.map((step, index) => (
           <div key={step.number} className="flex items-center flex-1">
             {/* Step Circle */}
-            <div className="flex flex-col items-center">
+            <div
+              className={`flex flex-col items-center ${onStepClick && step.number < currentStep ? 'cursor-pointer' : ''}`}
+              onClick={() => onStepClick && step.number < currentStep && onStepClick(step.number)}
+            >
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-opacity ${
                   step.number <= currentStep
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground'
-                }`}
+                } ${onStepClick && step.number < currentStep ? 'hover:opacity-80' : ''}`}
               >
                 {step.number}
               </div>
               <span
                 className={`mt-2 text-xs text-center ${
-                  language === 'th' ? 'font-sukhumvit' : 
+                  language === 'th' ? 'font-sukhumvit' :
                   language === 'zh' ? 'font-noto-sc' : 'font-lato'
                 } ${
                   step.number <= currentStep
