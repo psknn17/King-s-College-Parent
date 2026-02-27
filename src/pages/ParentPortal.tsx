@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
@@ -99,6 +100,8 @@ export const ParentPortal = ({
   const [currentCampus, setCurrentCampus] = useState<string>(mockStudents[0]?.campus || 'Pracha Uthit');
   const paymentPeriod: 'Termly' = 'Termly';
   const [selectedCamp, setSelectedCamp] = useState<any>(null);
+  const [showDeadlines, setShowDeadlines] = useState(false);
+  const [showOverdueDialog, setShowOverdueDialog] = useState(false);
 
   // Search states for each tab
   const [searchAfterSchool, setSearchAfterSchool] = useState('');
@@ -120,6 +123,13 @@ export const ParentPortal = ({
   const [cartBounce, setCartBounce] = useState(false);
   const prevCartCountRef = useRef(cartItems.length);
   const isMobile = useIsMobile();
+
+  // Reset upcoming deadlines when leaving dashboard tab
+  useEffect(() => {
+    if (activeTab !== 'dashboard') {
+      setShowDeadlines(false);
+    }
+  }, [activeTab]);
 
   // Bounce animation when items are added to cart
   useEffect(() => {
@@ -584,7 +594,7 @@ export const ParentPortal = ({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="w-[280px]">
                     <DropdownMenuLabel className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-                      {language === 'th' ? 'เลือกนักเรียน / Campus' : 'Select Student / Campus'}
+                      {language === 'th' ? 'เลือกนักเรียน' : language === 'zh' ? '选择学生' : 'Select Student'}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {mockStudents.map((student, index) => {
@@ -596,7 +606,6 @@ export const ParentPortal = ({
                           className={`cursor-pointer ${isSelected ? 'bg-primary/10 border-l-2 border-primary' : 'hover:bg-accent'}`}
                         >
                           <div className="flex items-center gap-3 w-full">
-                            <span className="text-lg">{student.avatar}</span>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <span className={`font-medium ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
@@ -815,23 +824,25 @@ export const ParentPortal = ({
                       id: 'total-due',
                       title: language === 'th' ? 'รวมยอดใบแจ้งหนี้' : 'Total Invoiced',
                       value: formatCurrency(outstandingAmount),
-                      subtitle: `${outstandingInvoices.length} ${t('portal.pending')}`,
+                      subtitle: `${outstandingInvoices.length} ${language === 'th' ? 'ใบแจ้งหนี้' : language === 'zh' ? '张发票' : 'invoices'}`,
                       icon: DollarSign,
                       color: overdueCount > 0 ? 'destructive' : 'warning',
+                      onClick: () => setShowDeadlines(prev => !prev),
                     },
                     {
                       id: 'overdue',
                       title: language === 'th' ? 'เกินกำหนดชำระ' : 'Overdue',
                       value: formatCurrency(overdueAmount),
-                      subtitle: `${overdueCount} ${language === 'th' ? 'รายการ' : 'Invoices'}`,
+                      subtitle: `${overdueCount} ${language === 'th' ? 'รายการ' : 'invoices'}`,
                       icon: AlertCircle,
                       color: 'destructive',
+                      onClick: () => setShowOverdueDialog(true),
                     },
                     {
                       id: 'credit-note',
                       title: language === 'th' ? 'ใบลดหนี้' : 'Credit Note',
                       value: formatCurrency(stats.creditBalance),
-                      subtitle: t('portal.availableCredit'),
+                      subtitle: '',
                       icon: Ticket,
                       color: 'info',
                       onClick: () => { setActiveTab('transaction'); setTransactionSubTab('creditNote'); }
@@ -840,7 +851,7 @@ export const ParentPortal = ({
                       id: 'receipts',
                       title: language === 'th' ? 'ใบเสร็จรับเงิน' : 'View Receipts',
                       value: allReceipts.filter(r => r.student_id.toString() === selectedStudent).length.toString(),
-                      subtitle: language === 'th' ? 'ใบเสร็จทั้งหมด' : 'Total Receipts',
+                      subtitle: '',
                       icon: Receipt,
                       color: 'success',
                       onClick: () => { setActiveTab('transaction'); setTransactionSubTab('receipts'); }
@@ -853,23 +864,25 @@ export const ParentPortal = ({
                 <SummaryBox
                   title={language === 'th' ? 'รวมยอดใบแจ้งหนี้' : language === 'zh' ? '总发票金额' : 'Total Invoiced'}
                   value={formatCurrency(outstandingAmount)}
-                  subtitle={`${outstandingInvoices.length} ${t('portal.pending')}`}
+                  subtitle={`${outstandingInvoices.length} ${language === 'th' ? 'ใบแจ้งหนี้' : language === 'zh' ? '张发票' : 'invoices'}`}
                   icon={FileText}
                   color="warning"
+                  onClick={() => setShowDeadlines(prev => !prev)}
                 />
 
                 <SummaryBox
                   title={language === 'th' ? 'เกินกำหนดชำระ' : 'Overdue'}
                   value={formatCurrency(overdueAmount)}
-                  subtitle={`${overdueCount} ${language === 'th' ? 'รายการ' : 'Invoices'}`}
+                  subtitle={`${overdueCount} ${language === 'th' ? 'รายการ' : 'invoices'}`}
                   icon={AlertCircle}
                   color="destructive"
+                  onClick={() => setShowOverdueDialog(true)}
                 />
 
                 <SummaryBox
                   title={language === 'th' ? 'ใบลดหนี้' : 'Credit Note'}
                   value={formatCurrency(stats.creditBalance)}
-                  subtitle={t('portal.availableCredit')}
+                  subtitle=""
                   icon={Ticket}
                   color="info"
                   onClick={() => { setActiveTab('transaction'); setTransactionSubTab('creditNote'); }}
@@ -878,7 +891,7 @@ export const ParentPortal = ({
                 <SummaryBox
                   title={language === 'th' ? 'ใบเสร็จรับเงิน' : 'View Receipts'}
                   value={allReceipts.filter(r => r.student_id.toString() === selectedStudent).length.toString()}
-                  subtitle={language === 'th' ? 'ใบเสร็จทั้งหมด' : 'Total Receipts'}
+                  subtitle=""
                   icon={Receipt}
                   color="success"
                   onClick={() => { setActiveTab('transaction'); setTransactionSubTab('receipts'); }}
@@ -887,7 +900,7 @@ export const ParentPortal = ({
             )}
 
             {/* Upcoming Deadlines - Grouped by Type */}
-            <Card>
+            {showDeadlines && <Card>
               <CardHeader>
                 <CardTitle className={`flex items-center gap-2 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                   <AlertCircle className="h-5 w-5" />
@@ -1051,7 +1064,7 @@ export const ParentPortal = ({
                                         {deadline.title}
                                       </p>
                                       <p className={`text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                                        {deadline.studentName} • {t('portal.due')}: {new Date(deadline.dueDate).toLocaleDateString()}
+                                        {deadline.studentName} • {t('portal.due')}: {new Date(deadline.dueDate).toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                       </p>
                                     </div>
                                     <Badge variant="outline" className="self-start sm:self-center">
@@ -1068,7 +1081,7 @@ export const ParentPortal = ({
                   );
                 })()}
               </CardContent>
-            </Card>
+            </Card>}
           </TabsContent>
 
           {/* Tuition Tab - Split into 70% invoice list and 30% cart */}
@@ -1808,6 +1821,52 @@ export const ParentPortal = ({
         }}
       />
 
+      {/* Overdue Invoices Dialog */}
+      <Dialog open={showOverdueDialog} onOpenChange={setShowOverdueDialog}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className={`flex items-center gap-2 text-destructive ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+              <AlertCircle className="h-5 w-5" />
+              {language === 'th' ? 'รายการเกินกำหนดชำระ' : language === 'zh' ? '逾期发票' : 'Overdue Invoices'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {overdueInvoices.length === 0 ? (
+              <p className={`text-center text-muted-foreground py-6 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                {language === 'th' ? 'ไม่มีรายการเกินกำหนด' : 'No overdue invoices'}
+              </p>
+            ) : (
+              overdueInvoices.map((inv) => {
+                const student = mockStudents.find(s => s.id === inv.student_id);
+                return (
+                  <div key={inv.id} className="flex items-start justify-between p-3 bg-destructive/5 border border-destructive/20 rounded-lg gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-medium text-sm ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                        {inv.description}
+                      </p>
+                      <p className={`text-xs text-muted-foreground mt-0.5 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                        {student?.name} • {language === 'th' ? 'ครบกำหนด' : 'Due'}: {new Date(inv.due_date).toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={`font-bold text-destructive text-sm ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                        {formatCurrency(inv.amount_due)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            {overdueInvoices.length > 0 && (
+              <div className={`flex justify-between items-center pt-2 border-t font-semibold ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                <span>{language === 'th' ? 'รวมทั้งหมด' : 'Total'}</span>
+                <span className="text-destructive">{formatCurrency(overdueAmount)}</span>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
-}; 
+};

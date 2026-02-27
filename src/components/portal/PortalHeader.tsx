@@ -73,7 +73,7 @@ export const PortalHeader = ({
     const dayName = t(days[date.getDay()]);
     const monthName = t(months[date.getMonth()]);
     if (language === 'en') {
-      return `${dayName}, ${monthName} ${date.getDate()}, ${date.getFullYear()}`;
+      return `${dayName}, ${date.getDate()} ${monthName} ${date.getFullYear()}`;
     } else if (language === 'th') {
       return `${dayName}ที่ ${date.getDate()} ${monthName} ${date.getFullYear() + 543}`;
     } else if (language === 'zh') {
