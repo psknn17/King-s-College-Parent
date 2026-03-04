@@ -7,10 +7,7 @@ import {
   ShoppingCart,
   CreditCard,
   QrCode,
-  Building2,
   Trash2,
-  MessageCircle,
-  Wallet,
   CheckCircle
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";

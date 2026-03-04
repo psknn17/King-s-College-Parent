@@ -1,70 +1,16 @@
-import { useState } from "react";
-import { LoginForm } from "@/components/auth/LoginForm";
-import { OTPVerification } from "@/components/auth/OTPVerification";
-import { SignUp } from "@/components/auth/SignUp";
-import { ForgotPassword } from "@/components/auth/ForgotPassword";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LogoBadge } from "@/components/LogoBadge";
+import { Button } from "@/components/ui/button";
+import { LogIn } from "lucide-react";
 import schoolBuilding from "@/assets/school-building-new.jpg";
 
 interface LoginProps {
   onLogin: () => void;
 }
 
-type AuthView = "email" | "otp" | "signup" | "forgot";
-
 export const Login = ({ onLogin }: LoginProps) => {
-  const [currentView, setCurrentView] = useState<AuthView>("email");
-  const [userEmail, setUserEmail] = useState<string>("");
-  const { t, getFontClass } = useLanguage();
-
-  const handleEmailSubmit = (email: string, _password: string) => {
-    setUserEmail(email);
-    setCurrentView("otp");
-  };
-
-  const handleOTPVerify = () => {
-    onLogin();
-  };
-
-  const handleSignUp = () => {
-    setCurrentView("email");
-  };
-
-  const renderAuthView = () => {
-    switch (currentView) {
-      case "otp":
-        return (
-          <OTPVerification
-            email={userEmail}
-            onVerify={handleOTPVerify}
-            onBackToEmail={() => setCurrentView("email")}
-          />
-        );
-      case "signup":
-        return (
-          <SignUp
-            onSignUp={handleSignUp}
-            onBackToLogin={() => setCurrentView("email")}
-          />
-        );
-      case "forgot":
-        return (
-          <ForgotPassword
-            onBackToLogin={() => setCurrentView("email")}
-          />
-        );
-      default:
-        return (
-          <LoginForm
-            onSubmitEmail={handleEmailSubmit}
-            onSignUp={() => setCurrentView("signup")}
-            onForgotPassword={() => setCurrentView("forgot")}
-          />
-        );
-    }
-  };
+  const { t, getFontClass, language } = useLanguage();
 
   return (
     <div className="min-h-screen flex">
@@ -105,22 +51,24 @@ export const Login = ({ onLogin }: LoginProps) => {
             </div>
 
             {/* Title */}
-            <div className="text-center mb-5">
+            <div className="text-center mb-6">
               <h1 className="text-2xl font-bold text-gray-900">
-                {currentView === "signup" ? t('auth.signupTitle') :
-                 currentView === "otp" ? t('auth.verifyOTP') :
-                 currentView === "forgot" ? t('auth.resetPasswordTitle') :
-                 t('portal.loginTitle')}
+                {language === 'th' ? 'ยินดีต้อนรับ' : language === 'zh' ? '欢迎' : 'Welcome'}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                {currentView === "email" && t('portal.loginSubtitle')}
-                {currentView === "otp" && t('auth.otpSubtitle')}
-                {currentView === "signup" && t('auth.signupSubtitle')}
-                {currentView === "forgot" && t('auth.resetPasswordSubtitle')}
+                {language === 'th' ? 'เข้าสู่ระบบผู้ปกครอง' : language === 'zh' ? '进入家长门户' : 'Parent Portal'}
               </p>
             </div>
 
-            {renderAuthView()}
+            {/* SSO Login Button */}
+            <Button
+              onClick={onLogin}
+              size="lg"
+              className="w-full text-base py-6"
+            >
+              <LogIn className="h-5 w-5 mr-2" />
+              {language === 'th' ? 'เข้าสู่ระบบ' : language === 'zh' ? '登录系统' : 'Enter Portal'}
+            </Button>
           </div>
         </div>
 

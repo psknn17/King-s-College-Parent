@@ -64,26 +64,6 @@ export const mockUpcomingDeadlines = [
     description: "Field Trip Payment Deadline"
   },
   {
-    id: "deadline-camp-001",
-    type: "trip" as const,
-    title: "Summer Art Camp Registration",
-    studentName: "Emma Johnson",
-    studentId: 1,
-    dueDate: "2024-12-28",
-    amount: 35000,
-    description: "Camp Registration Deadline"
-  },
-  {
-    id: "deadline-camp-002",
-    type: "trip" as const,
-    title: "Robotics Engineering Camp",
-    studentName: "Liam Johnson",
-    studentId: 2,
-    dueDate: "2025-01-05",
-    amount: 42000,
-    description: "Camp Registration Deadline"
-  },
-  {
     id: "deadline-exam-001",
     type: "exam" as const,
     title: "IELTS Registration",
@@ -180,15 +160,6 @@ export const mandatoryCourses = [
     schedule: "Tue & Thu 10:00-11:00 AM",
     location: "Library 3F"
   }
-];
-
-export const campusList = [
-  { id: "pracha-uthit", name: "SISB ประชาอุทิศ", nameEn: "Pracha Uthit" },
-  { id: "suvarnabhumi", name: "SISB สุวรรณภูมิ", nameEn: "Suvarnabhumi" },
-  { id: "thonburi", name: "SISB ธนบุรี", nameEn: "Thonburi" },
-  { id: "chiangmai", name: "SISB เชียงใหม่", nameEn: "Chiangmai" },
-  { id: "nonthaburi", name: "SISB นนทบุรี", nameEn: "Nonthaburi" },
-  { id: "rayong", name: "SISB ระยอง", nameEn: "Rayong" },
 ];
 
 export const mockInvoices = [
@@ -401,7 +372,7 @@ export const mockCreditNotes = [
     balance: 1200,
     items: [
       { title: "Tuition Overpayment", amount: 800 },
-      { title: "Summer Camp Refund", amount: 400 }
+      { title: "Activity Refund", amount: 400 }
     ]
   },
   { 
@@ -467,7 +438,7 @@ export const mockCreditNoteHistory = [
     student_id: 1,
     studentName: "Emma Johnson",
     amount: 2500,
-    description: "Summer camp partial refund",
+    description: "Activity partial refund",
     issued_at: "2023-08-15",
     type: "refund" as const,
     status: "used" as const,
@@ -870,193 +841,6 @@ export const mockCoursesData = {
   ]
 };
 
-// Student-specific summer activities data
-export const mockSummerActivitiesData = {
-  1: [ // Emma Johnson - Grade 5A
-    {
-      id: "summer-001",
-      name: "Junior Art Camp",
-      description: "Creative arts and crafts for younger students",
-      capacity: 20,
-      enrolled: 15,
-      schedule: "July 8-19, 9:00 AM - 1:00 PM",
-      location: "Art Studio Room 201",
-      price: 350,
-      duration: "2 weeks",
-      vendor: "Ms. Jennifer Taylor",
-      discount: "Early Bird: $30 off",
-      campType: 'flexible' as const,
-      campus: 'Bangkok',
-      totalWeeks: 2,
-      availableWeeks: [1, 2],
-      pricePerWeek: 350,
-      weekDates: {
-        1: { start: "2025-07-08", end: "2025-07-12" },
-        2: { start: "2025-07-15", end: "2025-07-19" }
-      },
-      boardingOptions: [
-        { id: 'weekday', name: 'Weekday Boarding', price: 3000 },
-        { id: 'weekend', name: 'Weekend Boarding', price: 2000 },
-        { id: 'full', name: 'Weekday + Weekend', price: 4500 }
-      ]
-    },
-    {
-      id: "summer-002",
-      name: "Nature Explorer Camp",
-      description: "Outdoor adventures and environmental learning",
-      capacity: 25,
-      enrolled: 18,
-      schedule: "July 22 - Aug 2, 9:00 AM - 2:00 PM",
-      location: "Outdoor Campus & Nature Trail",
-      price: 420,
-      duration: "2 weeks", 
-      vendor: "Mr. Tom Wilson",
-      discount: "Sibling Discount: 10% off",
-      campType: 'package' as const,
-      campus: 'Chiangmai',
-      totalWeeks: 2,
-      availableWeeks: [1, 2],
-      pricePerWeek: 0,
-      weekDates: {
-        1: { start: "2025-07-22", end: "2025-07-26" },
-        2: { start: "2025-07-29", end: "2025-08-02" }
-      },
-      boardingOptions: [
-        { id: 'weekday', name: 'Weekday Boarding', price: 3500 },
-        { id: 'weekend', name: 'Weekend Boarding', price: 2200 },
-        { id: 'full', name: 'Weekday + Weekend', price: 5000 }
-      ]
-    }
-  ],
-  2: [ // Liam Johnson - Grade 8B
-    {
-      id: "summer-003",
-      name: "Robotics & Coding Camp",
-      description: "Advanced programming and robot building",
-      capacity: 15,
-      enrolled: 12,
-      schedule: "July 8-19, 9:00 AM - 3:00 PM",
-      location: "STEM Lab & Computer Center",
-      price: 550,
-      duration: "2 weeks",
-      vendor: "Tech Team",
-      discount: "Early Bird: $75 off",
-      campType: 'flexible' as const,
-      campus: 'Nonthaburi',
-      totalWeeks: 5,
-      availableWeeks: [1, 2, 3, 4, 5],
-      pricePerWeek: 550,
-      weekDates: {
-        1: { start: "2025-07-08", end: "2025-07-12" },
-        2: { start: "2025-07-15", end: "2025-07-19" },
-        3: { start: "2025-07-22", end: "2025-07-26" },
-        4: { start: "2025-07-29", end: "2025-08-02" },
-        5: { start: "2025-08-05", end: "2025-08-09" }
-      },
-      boardingOptions: [
-        { id: 'weekday', name: 'Weekday Boarding', price: 4000 },
-        { id: 'weekend', name: 'Weekend Boarding', price: 2500 },
-        { id: 'full', name: 'Weekday + Weekend', price: 6000 }
-      ]
-    },
-    {
-      id: "summer-004",
-      name: "Soccer Skills Academy",
-      description: "Improve soccer techniques and teamwork",
-      capacity: 30,
-      enrolled: 28,
-      schedule: "Aug 5-16, 8:00 AM - 12:00 PM",
-      location: "Sports Field Complex",
-      price: 320,
-      duration: "2 weeks",
-      vendor: "Coach Michael Rodriguez",
-      campType: 'flexible' as const,
-      campus: 'Rayong',
-      totalWeeks: 4,
-      availableWeeks: [1, 2, 3, 4],
-      pricePerWeek: 320,
-      weekDates: {
-        1: { start: "2025-08-05", end: "2025-08-09" },
-        2: { start: "2025-08-12", end: "2025-08-16" },
-        3: { start: "2025-08-19", end: "2025-08-23" },
-        4: { start: "2025-08-26", end: "2025-08-30" }
-      },
-      boardingOptions: [
-        { id: 'weekday', name: 'Weekday Boarding', price: 3500 },
-        { id: 'weekend', name: 'Weekend Boarding', price: 2300 },
-        { id: 'full', name: 'Weekday + Weekend', price: 5200 }
-      ]
-    },
-    {
-      id: "summer-005",
-      name: "Science Discovery Camp",
-      description: "Hands-on experiments and laboratory work",
-      capacity: 20,
-      enrolled: 16,
-      schedule: "July 22 - Aug 2, 10:00 AM - 3:00 PM",
-      location: "Science Building Lab",
-      price: 480,
-      duration: "2 weeks",
-      vendor: "Science Department",
-      campType: 'package' as const,
-      campus: 'Bangkok',
-      totalWeeks: 3,
-      availableWeeks: [1, 2, 3],
-      pricePerWeek: 0,
-      weekDates: {
-        1: { start: "2025-07-22", end: "2025-07-26" },
-        2: { start: "2025-07-29", end: "2025-08-02" },
-        3: { start: "2025-08-05", end: "2025-08-09" }
-      },
-      boardingOptions: [
-        { id: 'weekday', name: 'Weekday Boarding', price: 4200 },
-        { id: 'weekend', name: 'Weekend Boarding', price: 2600 },
-        { id: 'full', name: 'Weekday + Weekend', price: 6200 }
-      ]
-    }
-  ],
-  3: [ // Sophia Johnson - Grade 11C
-    {
-      id: "summer-006",
-      name: "College Prep Intensive",
-      description: "SAT/ACT preparation and college application workshop",
-      capacity: 25,
-      enrolled: 22,
-      schedule: "July 8-26, 9:00 AM - 2:00 PM",
-      location: "Academic Center Room 501",
-      price: 650,
-      duration: "3 weeks",
-      vendor: "College Counseling Team",
-      discount: "Merit Scholarship: $100 off"
-    },
-    {
-      id: "summer-007",
-      name: "Advanced Biology Research",
-      description: "Independent research projects and lab work",
-      capacity: 12,
-      enrolled: 8,
-      schedule: "July 15 - Aug 9, 1:00 PM - 5:00 PM",
-      location: "Advanced Biology Lab",
-      price: 580,
-      duration: "4 weeks", 
-      vendor: "Dr. Lisa Chang",
-      discount: "Research Grant: $50 off"
-    },
-    {
-      id: "summer-008",
-      name: "Leadership Summit",
-      description: "Leadership skills development and community service",
-      capacity: 20,
-      enrolled: 15,
-      schedule: "Aug 12-23, 10:00 AM - 4:00 PM",
-      location: "Conference Center",
-      price: 520,
-      duration: "2 weeks",
-      vendor: "Leadership Institute"
-    }
-  ]
-};
-
 // Student-specific event activities data (School Events)
 export const mockEventActivitiesData = {
   1: [ // Emma Johnson - Grade 5A
@@ -1183,7 +967,6 @@ export const mockEventActivitiesData = {
 
 // Legacy exports for backward compatibility
 export const mockCourses = mockCoursesData[1];
-export const mockSummerActivities = mockSummerActivitiesData[1];
 export const mockEventActivities = mockEventActivitiesData[1];
 
 export const mockReceipts = [
@@ -1677,7 +1460,6 @@ export const getMockDataForStudent = (studentId: number) => {
     invoices,
     creditBalance: creditNote?.balance || 0,
     courses: mockCoursesData[studentId] || mockCoursesData[1],
-    summerActivities: mockSummerActivitiesData[studentId] || mockSummerActivitiesData[1],
     eventActivities: mockEventActivitiesData[studentId] || mockEventActivitiesData[1],
     examActivities: mockExamActivitiesData[studentId] || mockExamActivitiesData[1],
     tripActivities: mockTripActivitiesData[studentId] || mockTripActivitiesData[1],

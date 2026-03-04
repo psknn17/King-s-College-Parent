@@ -1,13 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  CreditCard, 
-  GraduationCap, 
-  Sun, 
-  Calendar, 
-  FileText, 
+import {
+  CreditCard,
+  GraduationCap,
+  Calendar,
   Receipt,
-  ChevronRight,
   Zap
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -30,7 +27,6 @@ interface QuickAction {
 interface QuickActionsProps {
   onPayNow: () => void;
   onRegisterActivities: () => void;
-  onRegisterCamp: () => void;
   onViewEvents: () => void;
   onViewReceipts: () => void;
   hasPendingPayments?: boolean;
@@ -40,7 +36,6 @@ interface QuickActionsProps {
 export const QuickActions = ({
   onPayNow,
   onRegisterActivities,
-  onRegisterCamp,
   onViewEvents,
   onViewReceipts,
   hasPendingPayments = true,
@@ -76,19 +71,6 @@ export const QuickActions = ({
       color: 'text-education-blue',
       bgColor: 'bg-education-blue/10 hover:bg-education-blue/20',
       onClick: onRegisterActivities,
-    },
-    {
-      id: 'register-camp',
-      icon: Sun,
-      label: 'Join Camp',
-      labelTh: 'เข้าร่วมค่าย',
-      labelZh: '参加夏令营',
-      description: 'Summer programs',
-      descriptionTh: 'โปรแกรมภาคฤดูร้อน',
-      descriptionZh: '夏季项目',
-      color: 'text-warning-orange',
-      bgColor: 'bg-warning-orange/10 hover:bg-warning-orange/20',
-      onClick: onRegisterCamp,
     },
     {
       id: 'view-events',
@@ -173,7 +155,7 @@ export const QuickActions = ({
           </div>
         ) : (
           // Desktop: Grid layout with descriptions
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {actions.map((action, index) => {
               const Icon = action.icon;
               return (

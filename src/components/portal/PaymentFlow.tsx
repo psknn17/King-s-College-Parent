@@ -5,16 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { 
-  Calendar, 
-  DollarSign, 
-  CreditCard, 
+import {
+  Calendar,
+  DollarSign,
+  CreditCard,
   QrCode,
-  Building2,
   AlertCircle,
-  CheckCircle,
-  MessageCircle,
-  Wallet
+  CheckCircle
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -36,9 +33,6 @@ interface PaymentFlowProps {
 const paymentMethods = [
   { id: 'credit_card', name: 'payment.creditCard', icon: CreditCard, fee: 2.9, currency: '%' },
   { id: 'promptpay', name: 'payment.promptPay', icon: QrCode, fee: 0, currency: '฿' },
-  { id: 'wechat', name: 'payment.wechatPay', icon: MessageCircle, fee: 1.5, currency: '%' },
-  { id: 'alipay', name: 'payment.alipay', icon: Wallet, fee: 1.5, currency: '%' },
-  { id: 'bank_counter', name: 'payment.bankAccount', icon: Building2, fee: 25, currency: '฿' }
 ];
 
 export const PaymentFlow = ({ invoice, creditBalance, onPaymentSuccess, onCancel }: PaymentFlowProps) => {

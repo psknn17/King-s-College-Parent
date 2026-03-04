@@ -28,7 +28,7 @@ interface CourseCartSidebarProps {
   onCheckout: () => void;
   onClearAll?: () => void;
   campus: string;
-  cartType?: 'course' | 'camp' | 'event' | 'exam';
+  cartType?: 'course' | 'event' | 'exam';
 }
 
 // Get student color by ID
@@ -43,9 +43,7 @@ export const CourseCartSidebar = ({ items, onRemoveItem, onCheckout, onClearAll,
   
   // Get cart title based on type
   const getCartTitle = () => {
-    if (cartType === 'camp') {
-      return language === 'th' ? 'รายการกิจกรรม' : 'Activity Cart';
-    } else if (cartType === 'event') {
+    if (cartType === 'event') {
       return language === 'th' ? 'รายการกิจกรรม' : 'Event Cart';
     } else if (cartType === 'exam') {
       return language === 'th' ? 'รายการสอบ' : 'Exam Cart';
@@ -54,9 +52,7 @@ export const CourseCartSidebar = ({ items, onRemoveItem, onCheckout, onClearAll,
   };
   
   const getEmptyMessage = () => {
-    if (cartType === 'camp') {
-      return language === 'th' ? 'ยังไม่มีกิจกรรมที่เลือก' : 'No activities selected';
-    } else if (cartType === 'event') {
+    if (cartType === 'event') {
       return language === 'th' ? 'ยังไม่มีกิจกรรมที่เลือก' : 'No events selected';
     } else if (cartType === 'exam') {
       return language === 'th' ? 'ยังไม่มีการสอบที่เลือก' : 'No exams selected';
@@ -65,9 +61,7 @@ export const CourseCartSidebar = ({ items, onRemoveItem, onCheckout, onClearAll,
   };
   
   const getEmptySubMessage = () => {
-    if (cartType === 'camp') {
-      return language === 'th' ? 'เลือกค่ายที่ต้องการลงทะเบียน' : 'Select camps to register';
-    } else if (cartType === 'event') {
+    if (cartType === 'event') {
       return language === 'th' ? 'เลือกกิจกรรมที่ต้องการลงทะเบียน' : 'Select events to register';
     } else if (cartType === 'exam') {
       return language === 'th' ? 'เลือกการสอบที่ต้องการลงทะเบียน' : 'Select exams to register';

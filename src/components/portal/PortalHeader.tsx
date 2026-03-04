@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { GraduationCap, Menu, LogOut, DollarSign, Clock, Sun, Receipt, ShoppingCart, Calendar, Settings, User, X, ArrowRight } from "lucide-react";
+import { GraduationCap, Menu, LogOut, DollarSign, Clock, Ticket, Receipt, ShoppingCart, Calendar, Settings, User, X, ArrowRight } from "lucide-react";
 import { LanguageSelector } from "@/components/LanguageSelector";
 import sisbLogo from "@/assets/kings-college-logo.png";
 import { ParentAccountSelector } from "./ParentAccountSelector";
@@ -250,8 +250,8 @@ export const PortalHeader = ({
                   ECA & EAS
                 </button>
                 <button onClick={() => { onTabChange?.("summer"); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors ${activeTab === "summer" ? "bg-primary text-primary-foreground" : "hover:bg-muted text-muted-foreground"} ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                  <Sun className="h-4 w-4" />
-                  Camp
+                  <Ticket className="h-4 w-4" />
+                  {language === 'th' ? 'ทริปและกิจกรรม' : language === 'zh' ? '旅行和活动' : 'Trip & Activity'}
                 </button>
 
                 {/* Event with Sub-items */}

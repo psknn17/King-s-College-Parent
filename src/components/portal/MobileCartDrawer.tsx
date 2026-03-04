@@ -24,7 +24,7 @@ interface MobileCartDrawerProps {
   onRemoveItem: (itemId: string, studentId?: string) => void;
   onCheckout: () => void;
   onClearAll?: () => void;
-  activeCartType?: 'tuition' | 'course' | 'camp' | 'trip' | 'exam' | 'all';
+  activeCartType?: 'tuition' | 'course' | 'trip' | 'exam' | 'all';
 }
 
 export const MobileCartDrawer = ({
@@ -48,7 +48,6 @@ export const MobileCartDrawer = ({
     : cartItems.filter(item => {
         if (activeCartType === 'tuition') return item.type === 'tuition';
         if (activeCartType === 'course') return item.type === 'course' || item.type === 'activity';
-        if (activeCartType === 'camp') return item.category === 'summer';
         if (activeCartType === 'trip') return item.category === 'trip';
         if (activeCartType === 'exam') return item.type === 'exam';
         return true;

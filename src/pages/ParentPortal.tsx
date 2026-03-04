@@ -3,13 +3,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { PortalHeader } from "@/components/portal/PortalHeader";
 import { SummaryBox } from "@/components/portal/SummaryBox";
 import { InvoiceCard } from "@/components/portal/InvoiceCard";
-import { CourseCard } from "@/components/portal/CourseCard";
-import { ExamCard } from "@/components/portal/ExamCard";
-import { TripCard, Trip } from "@/components/portal/TripCard";
 import { TuitionCartSidebar } from "@/components/portal/TuitionCartSidebar";
-import { CourseCartSidebar } from "@/components/portal/CourseCartSidebar";
-import { TripCartSidebar, TripCartItem } from "@/components/portal/TripCartSidebar";
-import { CampCheckout } from "@/components/portal/CampCheckout";
+import { TripCartItem } from "@/components/portal/TripCartSidebar";
 import { ReceiptList } from "@/components/portal/ReceiptList";
 import { StudentFilter } from "@/components/portal/StudentFilter";
 import { CountdownTimer } from "@/components/portal/CountdownTimer";
@@ -45,7 +40,6 @@ import {
   DollarSign,
   CreditCard,
   GraduationCap,
-  Sun,
   Receipt,
   AlertCircle,
   ChevronDown,
@@ -57,7 +51,7 @@ import {
   ShoppingCart,
   CheckCircle
 } from "lucide-react";
-import { mockStudents, getMockDataForStudent, mockInvoices, mockECAInvoices, mockTripInvoices, mockExamInvoices, mockSchoolBusInvoices, mockCreditNotes, mockReceipts, campusList, mandatoryCourses, mockEventActivitiesData, mockCreditNoteHistory, mockUpcomingDeadlines } from "@/data/mockData";
+import { mockStudents, getMockDataForStudent, mockInvoices, mockECAInvoices, mockTripInvoices, mockExamInvoices, mockSchoolBusInvoices, mockCreditNotes, mockReceipts, mandatoryCourses, mockEventActivitiesData, mockCreditNoteHistory, mockUpcomingDeadlines } from "@/data/mockData";
 import { generateReceiptPDF } from "@/utils/pdfGenerator";
 import { CreditNoteHistory } from "@/components/portal/CreditNoteHistory";
 import { toast } from "@/hooks/use-toast";
@@ -97,15 +91,12 @@ export const ParentPortal = ({
   const [transactionSubTab, setTransactionSubTab] = useState<'receipts' | 'creditNote'>('receipts');
   const [eventSubTab, setEventSubTab] = useState<'exam' | 'trip' | 'carnival'>('exam');
   const [selectedStudent, setSelectedStudent] = useState<string>(mockStudents[0]?.id.toString() || '1');
-  const [currentCampus, setCurrentCampus] = useState<string>(mockStudents[0]?.campus || 'Pracha Uthit');
   const paymentPeriod: 'Termly' = 'Termly';
-  const [selectedCamp, setSelectedCamp] = useState<any>(null);
   const [showDeadlines, setShowDeadlines] = useState(false);
   const [showOverdueDialog, setShowOverdueDialog] = useState(false);
 
   // Search states for each tab
   const [searchAfterSchool, setSearchAfterSchool] = useState('');
-  const [searchSummer, setSearchSummer] = useState('');
   const [searchEvent, setSearchEvent] = useState('');
   const [searchExam, setSearchExam] = useState('');
   const [searchTrip, setSearchTrip] = useState('');
@@ -253,7 +244,7 @@ export const ParentPortal = ({
     return { unpaid, paid, unpaidTotal, paidTotal };
   };
 
-  const handleAddToCart = (itemId: string, type: 'course' | 'activity' | 'event' | 'exam' | 'tuition' | 'eca' | 'trip' | 'schoolbus', studentId?: string, configData?: any) => {
+  const handleAddToCart = (itemId: string, type: 'course' | 'activity' | 'event' | 'exam' | 'tuition' | 'eca' | 'trip' | 'schoolbus', studentId?: string) => {
     let item: any;
     let studentInfo: { studentId?: string; studentName?: string } = {};
 
@@ -341,14 +332,9 @@ export const ParentPortal = ({
     } else {
       const studentData = getMockDataForStudent(parseInt(studentId || selectedStudent));
 
-      // Check if it's from courses (after-school), summer activities, or events
+      // Check if it's from courses (after-school) or events
       let course = studentData.courses.find((c: any) => c.id === itemId);
       let category = 'after-school';
-
-      if (!course) {
-        course = studentData.summerActivities.find((c: any) => c.id === itemId);
-        category = 'summer';
-      }
 
       if (!course) {
         course = studentData.eventActivities.find((c: any) => c.id === itemId);
@@ -366,10 +352,9 @@ export const ParentPortal = ({
       item = {
         id: itemId,
         name: course.name,
-        price: configData?.totalPrice || course.price,
+        price: course.price,
         type,
         category,
-        campConfig: configData, // Store camp configuration if provided
         ...studentInfo
       };
     }
@@ -386,7 +371,6 @@ export const ParentPortal = ({
 
   const handleStudentChange = (student: typeof mockStudents[0]) => {
     setSelectedStudent(student.id.toString());
-    setCurrentCampus(student.campus);
   };
 
   const handleRemoveFromCart = (itemId: string, studentId?: string) => {
@@ -464,7 +448,7 @@ export const ParentPortal = ({
     mockStudents.forEach(student => {
       const studentData = getMockDataForStudent(student.id);
 
-      [...studentData.courses, ...studentData.summerActivities, ...studentData.eventActivities].forEach(course => {
+      [...studentData.courses, ...studentData.eventActivities].forEach(course => {
         // Parse schedule to extract days and times
         const scheduleMatch = course.schedule.match(/(Mon|Tue|Wed|Thu|Fri|Sat|Sun).*?(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
 
@@ -662,7 +646,7 @@ export const ParentPortal = ({
               )}
             </TabsTrigger>
             <TabsTrigger value="summer" className={cn("relative", language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato')}>
-              <Sun className="h-4 w-4 md:mr-2" />
+              <Ticket className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{language === 'th' ? 'ทริปและกิจกรรม' : language === 'zh' ? '旅行和活动' : 'Trip & Activity'}</span>
               {categoryUnpaidCounts.trip > 0 && (
                 <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
@@ -754,7 +738,7 @@ export const ParentPortal = ({
                   language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
                 )}
               >
-                <Sun className="h-4 w-4" />
+                <Ticket className="h-4 w-4" />
                 {language === 'th' ? 'ทริปและกิจกรรม' : language === 'zh' ? '旅行和活动' : 'Trip & Activity'}
                 {categoryUnpaidCounts.trip > 0 && (
                   <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
@@ -917,7 +901,6 @@ export const ParentPortal = ({
                       case 'tuition': return DollarSign;
                       case 'eca': return Clock;
                       case 'trip': return Bus;
-                      case 'camp': return Sun;
                       case 'exam': return FileText;
                       case 'schoolbus': return Bus;
                       default: return Calendar;
@@ -928,7 +911,6 @@ export const ParentPortal = ({
                       case 'tuition': return 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300';
                       case 'eca': return 'bg-blue-500/20 text-blue-700 dark:text-blue-300';
                       case 'trip': return 'bg-green-500/20 text-green-700 dark:text-green-300';
-                      case 'camp': return 'bg-orange-500/20 text-orange-700 dark:text-orange-300';
                       case 'exam': return 'bg-purple-500/20 text-purple-700 dark:text-purple-300';
                       case 'schoolbus': return 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300';
                       default: return 'bg-muted text-muted-foreground';
@@ -939,7 +921,6 @@ export const ParentPortal = ({
                       case 'tuition': return language === 'th' ? 'ค่าเทอม' : language === 'zh' ? '学费' : 'Tuition';
                       case 'eca': return 'ECA';
                       case 'trip': return language === 'th' ? 'ทริป' : language === 'zh' ? '旅行' : 'Trip';
-                      case 'camp': return language === 'th' ? 'แคมป์' : language === 'zh' ? '夏令营' : 'Camp';
                       case 'exam': return language === 'th' ? 'สอบ' : language === 'zh' ? '考试' : 'Exam';
                       case 'schoolbus': return language === 'th' ? 'รถรับส่ง' : language === 'zh' ? '校车' : 'School Bus';
                       default: return type;
@@ -950,7 +931,6 @@ export const ParentPortal = ({
                       case 'tuition': setActiveTab('tuition'); break;
                       case 'eca': setActiveTab('afterschool'); break;
                       case 'trip': setActiveTab('summer'); break;
-                      case 'camp': setActiveTab('summer'); break;
                       case 'exam': setActiveTab('event'); break;
                       case 'schoolbus': setActiveTab('schoolbus'); break;
                       default: break;
@@ -1001,7 +981,7 @@ export const ParentPortal = ({
                   };
 
                   // Define type order: types with overdue items first, then by original order
-                  const typeOrder = ['tuition', 'eca', 'trip', 'camp', 'exam', 'schoolbus'];
+                  const typeOrder = ['tuition', 'eca', 'trip', 'exam', 'schoolbus'];
                   const sortedTypes = typeOrder
                     .filter(type => groupedDeadlines[type]?.length > 0)
                     .sort((a, b) => {

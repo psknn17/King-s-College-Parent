@@ -59,31 +59,6 @@ export const validatePaymentForm = (data: PaymentFormData): ValidationResult => 
   };
 };
 
-// Camp registration form validation
-export interface CampFormData {
-  studentId?: string;
-  weeks?: string[];
-  meals?: boolean;
-  transportation?: boolean;
-}
-
-export const validateCampForm = (data: CampFormData): ValidationResult => {
-  const errors: Record<string, string> = {};
-
-  if (!data.studentId) {
-    errors.studentId = 'Please select a student';
-  }
-
-  if (!data.weeks || data.weeks.length === 0) {
-    errors.weeks = 'Please select at least one week';
-  }
-
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  };
-};
-
 // Credit card validation (basic)
 export const validateCreditCard = (cardNumber: string): boolean => {
   // Remove spaces and dashes

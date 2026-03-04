@@ -1,16 +1,8 @@
-import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, MapPin, AlertTriangle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CampConfigDialog } from "./CampConfigDialog";
-
-interface BoardingOption {
-  id: string;
-  name: string;
-  price: number;
-}
 
 interface Course {
   id: string;
@@ -24,48 +16,21 @@ interface Course {
   duration: string;
   vendor: string;
   hasConflict?: boolean;
-  campType?: 'flexible' | 'package';
-  campus?: string;
-  totalWeeks?: number;
-  availableWeeks?: number[];
-  pricePerWeek?: number;
-  boardingOptions?: BoardingOption[];
-  weekDates?: { [key: number]: { start: string; end: string } };
 }
 
 interface CourseCardProps {
   course: Course;
-  onAddToCart?: (courseId: string, campConfig?: any) => void;
+  onAddToCart?: (courseId: string) => void;
   onRemoveFromCart?: (courseId: string) => void;
   isInCart?: boolean;
-  isCamp?: boolean;
 }
 
-export const CourseCard = ({ course, onAddToCart, onRemoveFromCart, isInCart, isCamp = false }: CourseCardProps) => {
+export const CourseCard = ({ course, onAddToCart, onRemoveFromCart, isInCart }: CourseCardProps) => {
   const spotsLeft = course.capacity - course.enrolled;
   const isFullyBooked = spotsLeft <= 0;
   const isLowCapacity = spotsLeft <= 3 && spotsLeft > 0;
-  const [showCampDialog, setShowCampDialog] = useState(false);
 
   const { language, formatCurrency, t } = useLanguage();
-
-  const getCampusColor = (campus?: string) => {
-    switch(campus) {
-      case 'Chiangmai': return 'bg-purple-500/20 text-purple-700 dark:text-purple-300';
-      case 'Nonthaburi': return 'bg-blue-500/20 text-blue-700 dark:text-blue-300';
-      case 'Rayong': return 'bg-green-500/20 text-green-700 dark:text-green-300';
-      case 'Bangkok': return 'bg-orange-500/20 text-orange-700 dark:text-orange-300';
-      default: return 'bg-gray-500/20 text-gray-700 dark:text-gray-300';
-    }
-  };
-
-  const getCampTypeLabel = (campType?: 'flexible' | 'package') => {
-    if (!campType) return null;
-    if (campType === 'flexible') {
-      return language === 'th' ? 'เลือกสัปดาห์ได้' : language === 'zh' ? '可选周' : 'Flexible Weeks';
-    }
-    return language === 'th' ? 'แพ็คเกจเต็ม' : language === 'zh' ? '完整套餐' : 'Full Package';
-  };
 
   const getAvailabilityColor = () => {
     if (isFullyBooked) return 'bg-destructive/20 text-destructive';
@@ -80,15 +45,7 @@ export const CourseCard = ({ course, onAddToCart, onRemoveFromCart, isInCart, is
   };
 
   const handleAddToCart = () => {
-    if (isCamp && course.campType && course.boardingOptions) {
-      setShowCampDialog(true);
-    } else {
-      onAddToCart?.(course.id);
-    }
-  };
-
-  const handleCampConfigConfirm = (config: any) => {
-    onAddToCart?.(course.id, config);
+    onAddToCart?.(course.id);
   };
 
   return (
@@ -115,21 +72,6 @@ export const CourseCard = ({ course, onAddToCart, onRemoveFromCart, isInCart, is
               </span>
             </Badge>
             
-            {course.campus && (
-              <Badge className={getCampusColor(course.campus)}>
-                <span className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-                  #{course.campus}
-                </span>
-              </Badge>
-            )}
-            
-            {course.campType && (
-              <Badge variant="outline" className="border-primary/50">
-                <span className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-                  {getCampTypeLabel(course.campType)}
-                </span>
-              </Badge>
-            )}
           </div>
         </div>
       </CardHeader>
@@ -197,26 +139,6 @@ export const CourseCard = ({ course, onAddToCart, onRemoveFromCart, isInCart, is
         </div>
       </CardContent>
 
-      {/* Camp Configuration Dialog */}
-      {isCamp && course.campType && course.boardingOptions && course.availableWeeks && (
-        <CampConfigDialog
-          open={showCampDialog}
-          onOpenChange={setShowCampDialog}
-          camp={{
-            id: course.id,
-            name: course.name,
-            price: course.price,
-            campType: course.campType,
-            campus: course.campus || '',
-            totalWeeks: course.totalWeeks || 0,
-            availableWeeks: course.availableWeeks,
-            pricePerWeek: course.pricePerWeek || 0,
-            boardingOptions: course.boardingOptions,
-            weekDates: course.weekDates,
-          }}
-          onConfirm={handleCampConfigConfirm}
-        />
-      )}
     </Card>
   );
 };
