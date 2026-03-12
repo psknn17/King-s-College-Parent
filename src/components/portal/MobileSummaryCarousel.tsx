@@ -15,6 +15,7 @@ interface SummaryCardData {
   color: 'primary' | 'warning' | 'info' | 'success' | 'destructive';
   badge?: string | number;
   onClick?: () => void;
+  breakdown?: { label: string; amount: string }[];
 }
 
 interface MobileSummaryCarouselProps {
@@ -133,6 +134,16 @@ export const MobileSummaryCarousel = ({ cards }: MobileSummaryCarouselProps) => 
                       <p className={cn("text-xs text-muted-foreground", fontClass)}>
                         {card.subtitle}
                       </p>
+                      {card.breakdown && card.breakdown.length > 0 && (
+                        <div className="mt-2 space-y-0.5 border-t border-border pt-2">
+                          {card.breakdown.map((item, i) => (
+                            <div key={i} className={cn("flex justify-between text-xs text-muted-foreground", fontClass)}>
+                              <span>{item.label}</span>
+                              <span>{item.amount}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     {card.onClick && (

@@ -169,6 +169,17 @@ export const ParentPortal = ({
     availableCourses: 15,
   };
 
+  const creditNoteBreakdown = (() => {
+    const cn = allCreditNotes.find(c => c.student_id.toString() === selectedStudent);
+    if (!cn || !cn.items || cn.items.length === 0) return undefined;
+    const overpaymentTotal = cn.items.filter(i => i.title.toLowerCase().includes('overpayment')).reduce((s, i) => s + i.amount, 0);
+    const creditNoteTotal = cn.items.filter(i => !i.title.toLowerCase().includes('overpayment')).reduce((s, i) => s + i.amount, 0);
+    const rows: { label: string; amount: string }[] = [];
+    if (creditNoteTotal > 0) rows.push({ label: language === 'th' ? 'ใบลดหนี้' : 'Credit Note', amount: formatCurrency(creditNoteTotal) });
+    if (overpaymentTotal > 0) rows.push({ label: 'Overpayment', amount: formatCurrency(overpaymentTotal) });
+    return rows.length > 0 ? rows : undefined;
+  })();
+
   const outstandingInvoices = allInvoices.filter(inv =>
     (inv.status === 'pending' || inv.status === 'overdue') &&
     inv.student_id.toString() === selectedStudent &&
@@ -829,7 +840,8 @@ export const ParentPortal = ({
                       subtitle: '',
                       icon: Ticket,
                       color: 'info',
-                      onClick: () => { setActiveTab('transaction'); setTransactionSubTab('creditNote'); }
+                      onClick: () => { setActiveTab('transaction'); setTransactionSubTab('creditNote'); },
+                      breakdown: creditNoteBreakdown,
                     },
                     {
                       id: 'receipts',
@@ -870,6 +882,7 @@ export const ParentPortal = ({
                   icon={Ticket}
                   color="info"
                   onClick={() => { setActiveTab('transaction'); setTransactionSubTab('creditNote'); }}
+                  breakdown={creditNoteBreakdown}
                 />
 
                 <SummaryBox

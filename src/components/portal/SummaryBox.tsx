@@ -14,6 +14,7 @@ interface SummaryBoxProps {
   };
   badge?: string | number;
   onClick?: () => void;
+  breakdown?: { label: string; amount: string }[];
 }
 
 export const SummaryBox = ({
@@ -24,7 +25,8 @@ export const SummaryBox = ({
   color = 'primary',
   trend,
   badge,
-  onClick
+  onClick,
+  breakdown
 }: SummaryBoxProps) => {
   const { language } = useLanguage();
   const colorClasses = {
@@ -78,6 +80,16 @@ export const SummaryBox = ({
               <p className={`text-xs text-muted-foreground mt-1 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                 {subtitle}
               </p>
+            )}
+            {breakdown && breakdown.length > 0 && (
+              <div className="mt-2 space-y-0.5 border-t border-current/20 pt-2">
+                {breakdown.map((item, i) => (
+                  <div key={i} className={`flex justify-between text-xs text-muted-foreground ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                    <span>{item.label}</span>
+                    <span>{item.amount}</span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
