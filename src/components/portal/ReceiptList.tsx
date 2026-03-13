@@ -59,7 +59,11 @@ export const ReceiptList = ({ receipts, onDownload }: ReceiptListProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const PAGE_SIZE = 5;
 
-  const students = Array.from(new Set(receipts.map(r => ({ id: r.student_id, name: r.studentName }))))
+  const students = receipts
+    .reduce<{ id: number; name: string }[]>((acc, r) => {
+      if (!acc.some(s => s.id === r.student_id)) acc.push({ id: r.student_id, name: r.studentName });
+      return acc;
+    }, [])
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const fontClass = language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato';
@@ -255,7 +259,7 @@ export const ReceiptList = ({ receipts, onDownload }: ReceiptListProps) => {
                       {hasCreditNotes && (
                         <div className="mt-3 space-y-1.5">
                           <p className={`text-xs font-medium text-muted-foreground ${fontClass}`}>
-                            {language === 'th' ? 'ใบลดหนี้ที่ใช้' : 'Credit notes applied'}
+                            {language === 'th' ? 'เครดิตที่ใช้' : 'Refund / Credit applied'}
                           </p>
                           {receipt.usedCreditNotes!.map((cn) => (
                             <div key={cn.id} className="flex items-center gap-2 bg-amber-500/5 border border-amber-500/20 rounded-md px-2.5 py-1.5">
@@ -299,7 +303,7 @@ export const ReceiptList = ({ receipts, onDownload }: ReceiptListProps) => {
                           </div>
                           <div className="flex sm:justify-end items-center gap-2">
                             <span className={`text-xs text-muted-foreground ${fontClass}`}>
-                              {language === 'th' ? 'Credit note(s) applied' : 'Credit note(s) applied'}
+                              {language === 'th' ? 'เครดิตที่ใช้' : 'Refund / Credit applied'}
                             </span>
                             <span className={`text-sm font-medium text-amber-600 ${fontClass}`}>
                               -{formatCurrency(creditTotal)}

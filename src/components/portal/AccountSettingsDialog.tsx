@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Dialog,
@@ -6,13 +5,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import { User, Phone, Mail, Save } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { User, Phone, Mail, Info } from "lucide-react";
 
 interface AccountSettingsDialogProps {
   open: boolean;
@@ -23,18 +20,11 @@ export const AccountSettingsDialog = ({ open, onOpenChange }: AccountSettingsDia
   const { language } = useLanguage();
   const fontClass = language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato';
 
-  const [profile, setProfile] = useState({
+  const profile = {
     firstName: "John",
     lastName: "Smith",
     email: "john.smith@email.com",
     phone: "+66 81 234 5678",
-  });
-
-  const handleSaveProfile = () => {
-    toast({
-      title: language === 'th' ? 'บันทึกข้อมูลแล้ว' : 'Profile saved',
-      description: language === 'th' ? 'ข้อมูลส่วนตัวของคุณถูกอัปเดตแล้ว' : 'Your profile has been updated.',
-    });
   };
 
   return (
@@ -68,16 +58,16 @@ export const AccountSettingsDialog = ({ open, onOpenChange }: AccountSettingsDia
               <Label className={fontClass}>{language === 'th' ? 'ชื่อ' : 'First Name'}</Label>
               <Input
                 value={profile.firstName}
-                onChange={e => setProfile(p => ({ ...p, firstName: e.target.value }))}
-                className={fontClass}
+                disabled
+                className={`${fontClass} bg-muted`}
               />
             </div>
             <div className="space-y-1.5">
               <Label className={fontClass}>{language === 'th' ? 'นามสกุล' : 'Last Name'}</Label>
               <Input
                 value={profile.lastName}
-                onChange={e => setProfile(p => ({ ...p, lastName: e.target.value }))}
-                className={fontClass}
+                disabled
+                className={`${fontClass} bg-muted`}
               />
             </div>
           </div>
@@ -90,8 +80,8 @@ export const AccountSettingsDialog = ({ open, onOpenChange }: AccountSettingsDia
             <Input
               type="email"
               value={profile.email}
-              onChange={e => setProfile(p => ({ ...p, email: e.target.value }))}
-              className={fontClass}
+              disabled
+              className={`${fontClass} bg-muted`}
             />
           </div>
 
@@ -103,15 +93,22 @@ export const AccountSettingsDialog = ({ open, onOpenChange }: AccountSettingsDia
             <Input
               type="tel"
               value={profile.phone}
-              onChange={e => setProfile(p => ({ ...p, phone: e.target.value }))}
-              className={fontClass}
+              disabled
+              className={`${fontClass} bg-muted`}
             />
           </div>
 
-          <Button onClick={handleSaveProfile} className={`w-full gap-2 ${fontClass}`}>
-            <Save className="h-4 w-4" />
-            {language === 'th' ? 'บันทึกข้อมูล' : 'Save Changes'}
-          </Button>
+          {/* Admin contact notice */}
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <Info className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+            <p className={`text-sm text-amber-700 ${fontClass}`}>
+              {language === 'th'
+                ? 'หากต้องการแก้ไขข้อมูล กรุณาติดต่อแอดมิน'
+                : language === 'zh'
+                ? '如需修改信息，请联系管理员'
+                : 'To edit your information, please contact the admin.'}
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

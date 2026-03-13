@@ -23,6 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -104,6 +105,7 @@ export const ParentPortal = ({
 
   // Trip status management
   const [tripStatuses, setTripStatuses] = useState<Record<string, 'pending' | 'accepted' | 'declined' | 'paid'>>({});
+  const [selectedDeadlineItems, setSelectedDeadlineItems] = useState<Set<string>>(new Set());
 
   // Trip cart items
   const [tripCartItems, setTripCartItems] = useState<TripCartItem[]>([]);
@@ -175,7 +177,7 @@ export const ParentPortal = ({
     const overpaymentTotal = cn.items.filter(i => i.title.toLowerCase().includes('overpayment')).reduce((s, i) => s + i.amount, 0);
     const creditNoteTotal = cn.items.filter(i => !i.title.toLowerCase().includes('overpayment')).reduce((s, i) => s + i.amount, 0);
     const rows: { label: string; amount: string }[] = [];
-    if (creditNoteTotal > 0) rows.push({ label: language === 'th' ? 'ใบลดหนี้' : 'Credit Note', amount: formatCurrency(creditNoteTotal) });
+    if (creditNoteTotal > 0) rows.push({ label: language === 'th' ? 'เงินคืน / เครดิตคงเหลือ' : 'Refund / Credit Balance', amount: formatCurrency(creditNoteTotal) });
     if (overpaymentTotal > 0) rows.push({ label: 'Overpayment', amount: formatCurrency(overpaymentTotal) });
     return rows.length > 0 ? rows : undefined;
   })();
@@ -632,14 +634,12 @@ export const ParentPortal = ({
           {/* Desktop Navigation - Tabs */}
           <TabsList className="hidden md:grid w-full gap-1 grid-cols-7">
             <TabsTrigger value="dashboard" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-              <GraduationCap className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{t('portal.dashboard')}</span>
             </TabsTrigger>
             <TabsTrigger value="tuition" className={cn(
               "relative",
               language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
             )}>
-              <DollarSign className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">{t('portal.tuition')}</span>
               {unpaidInvoicesCount > 0 && (
                 <Badge variant="destructive" className="ml-1 h-5 w-5 flex items-center justify-center p-0 text-xs shrink-0">
@@ -648,7 +648,6 @@ export const ParentPortal = ({
               )}
             </TabsTrigger>
             <TabsTrigger value="afterschool" className={cn("relative", language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato')}>
-              <Clock className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">ECA</span>
               {categoryUnpaidCounts.eca > 0 && (
                 <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
@@ -657,7 +656,7 @@ export const ParentPortal = ({
               )}
             </TabsTrigger>
             <TabsTrigger value="summer" className={cn("relative", language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato')}>
-              <Ticket className="h-4 w-4 md:mr-2" />
+
               <span className="hidden md:inline">{language === 'th' ? 'ทริปและกิจกรรม' : language === 'zh' ? '旅行和活动' : 'Trip & Activity'}</span>
               {categoryUnpaidCounts.trip > 0 && (
                 <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
@@ -666,7 +665,7 @@ export const ParentPortal = ({
               )}
             </TabsTrigger>
             <TabsTrigger value="event" className={cn("relative", language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato')}>
-              <Calendar className="h-4 w-4 md:mr-2" />
+
               <span className="hidden md:inline">{language === 'th' ? 'สอบ' : language === 'zh' ? '考试' : 'Exam'}</span>
               {categoryUnpaidCounts.exam > 0 && (
                 <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
@@ -675,7 +674,7 @@ export const ParentPortal = ({
               )}
             </TabsTrigger>
             <TabsTrigger value="schoolbus" className={cn("relative", language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato')}>
-              <Bus className="h-4 w-4 md:mr-2" />
+
               <span className="hidden md:inline">{language === 'th' ? 'รถรับส่ง' : language === 'zh' ? '校车' : 'School Bus'}</span>
               {categoryUnpaidCounts.schoolbus > 0 && (
                 <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
@@ -684,7 +683,7 @@ export const ParentPortal = ({
               )}
             </TabsTrigger>
             <TabsTrigger value="transaction" className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-              <Receipt className="h-4 w-4 md:mr-2" />
+
               <span className="hidden md:inline">{t('portal.transactionHistory')}</span>
             </TabsTrigger>
           </TabsList>
@@ -699,7 +698,6 @@ export const ParentPortal = ({
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
               >
-                <GraduationCap className="h-4 w-4" />
                 Dashboard
               </button>
               <button
@@ -711,7 +709,6 @@ export const ParentPortal = ({
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 )}
               >
-                <DollarSign className="h-4 w-4" />
                 <span className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
                   {t('portal.tuition')}
                 </span>
@@ -731,7 +728,6 @@ export const ParentPortal = ({
                   language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
                 )}
               >
-                <Clock className="h-4 w-4" />
                 ECA
                 {categoryUnpaidCounts.eca > 0 && (
                   <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
@@ -749,7 +745,6 @@ export const ParentPortal = ({
                   language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
                 )}
               >
-                <Ticket className="h-4 w-4" />
                 {language === 'th' ? 'ทริปและกิจกรรม' : language === 'zh' ? '旅行和活动' : 'Trip & Activity'}
                 {categoryUnpaidCounts.trip > 0 && (
                   <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
@@ -767,7 +762,6 @@ export const ParentPortal = ({
                   language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
                 )}
               >
-                <Calendar className="h-4 w-4" />
                 {language === 'th' ? 'สอบ' : language === 'zh' ? '考试' : 'Exam'}
                 {categoryUnpaidCounts.exam > 0 && (
                   <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
@@ -785,7 +779,6 @@ export const ParentPortal = ({
                   language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'
                 )}
               >
-                <Bus className="h-4 w-4" />
                 {language === 'th' ? 'รถรับส่ง' : language === 'zh' ? '校车' : 'School Bus'}
                 {categoryUnpaidCounts.schoolbus > 0 && (
                   <Badge variant="destructive" className="ml-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
@@ -800,7 +793,6 @@ export const ParentPortal = ({
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   } ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}
               >
-                <Receipt className="h-4 w-4" />
                 {language === 'th' ? 'ประวัติ' : 'History'}
               </button>
             </div>
@@ -835,7 +827,7 @@ export const ParentPortal = ({
                     },
                     {
                       id: 'credit-note',
-                      title: language === 'th' ? 'ใบลดหนี้' : 'Credit Note',
+                      title: language === 'th' ? 'เงินคืน / เครดิตคงเหลือ' : 'Refund / Credit Balance',
                       value: formatCurrency(stats.creditBalance),
                       subtitle: '',
                       icon: Ticket,
@@ -876,7 +868,7 @@ export const ParentPortal = ({
                 />
 
                 <SummaryBox
-                  title={language === 'th' ? 'ใบลดหนี้' : 'Credit Note'}
+                  title={language === 'th' ? 'เงินคืน / เครดิตคงเหลือ' : 'Refund / Credit Balance'}
                   value={formatCurrency(stats.creditBalance)}
                   subtitle=""
                   icon={Ticket}
@@ -898,16 +890,20 @@ export const ParentPortal = ({
 
             {/* Upcoming Deadlines - Grouped by Type */}
             {showDeadlines && <Card>
-              <CardHeader>
-                <CardTitle className={`flex items-center gap-2 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
-                  <AlertCircle className="h-5 w-5" />
-                  {t('portal.upcomingDeadlines')}
-                </CardTitle>
-                <CardDescription className={language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}>
-                  {t('portal.importantDates')} {mockStudents.find(s => s.id.toString() === selectedStudent)?.name || t('portal.allStudents')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+              <Accordion type="single" collapsible defaultValue="deadlines">
+                <AccordionItem value="deadlines" className="border-0">
+                  <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                    <div className="flex flex-col items-start gap-1">
+                      <div className={`flex items-center gap-2 text-lg font-semibold ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                        <AlertCircle className="h-5 w-5" />
+                        {mockStudents.find(s => s.id.toString() === selectedStudent)?.name || t('portal.upcomingDeadlines')}
+                      </div>
+                      <span className={`text-sm text-muted-foreground font-normal ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                        {t('portal.importantDates')}
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
                 {(() => {
                   const getTypeIcon = (type: string) => {
                     switch (type) {
@@ -978,19 +974,17 @@ export const ParentPortal = ({
                     };
                   });
 
-                  const sortOverdueFirst = (a: any, b: any) => {
-                    if (a.status === 'overdue' && b.status !== 'overdue') return -1;
-                    if (a.status !== 'overdue' && b.status === 'overdue') return 1;
+                  const sortOldestFirst = (a: any, b: any) => {
                     return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
                   };
 
                   // Group by Tab perspective (Tuition shows all, others show specific)
                   const groupedDeadlines: Record<string, any[]> = {
-                    tuition: [...mappedDeadlines].sort(sortOverdueFirst),
-                    eca: mappedDeadlines.filter(d => d.type === 'eca').sort(sortOverdueFirst),
-                    trip: mappedDeadlines.filter(d => d.type === 'trip').sort(sortOverdueFirst),
-                    exam: mappedDeadlines.filter(d => d.type === 'exam').sort(sortOverdueFirst),
-                    schoolbus: mappedDeadlines.filter(d => d.type === 'schoolbus').sort(sortOverdueFirst),
+                    tuition: mappedDeadlines.filter(d => d.type === 'tuition').sort(sortOldestFirst),
+                    eca: mappedDeadlines.filter(d => d.type === 'eca').sort(sortOldestFirst),
+                    trip: mappedDeadlines.filter(d => d.type === 'trip').sort(sortOldestFirst),
+                    exam: mappedDeadlines.filter(d => d.type === 'exam').sort(sortOldestFirst),
+                    schoolbus: mappedDeadlines.filter(d => d.type === 'schoolbus').sort(sortOldestFirst),
                   };
 
                   // Define type order: types with overdue items first, then by original order
@@ -1015,6 +1009,7 @@ export const ParentPortal = ({
                   }
 
                   return (
+                    <div className="space-y-4">
                     <Accordion type="multiple" className="w-full space-y-2">
                       {sortedTypes.map((type) => {
                         const deadlines = groupedDeadlines[type];
@@ -1030,7 +1025,6 @@ export const ParentPortal = ({
                             <AccordionTrigger className="px-3 py-3 hover:no-underline">
                               <div className="flex items-center justify-between w-full pr-2">
                                 <div className="flex items-center gap-3">
-                                  <TypeIcon className="h-5 w-5 text-muted-foreground" />
                                   <span className={`font-medium ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                                     {getTypeLabel(type)}
                                   </span>
@@ -1042,16 +1036,34 @@ export const ParentPortal = ({
                             </AccordionTrigger>
                             <AccordionContent className="px-3 pb-3">
                               <div className="space-y-2">
-                                {deadlines.map((deadline, index) => (
+                                {deadlines.map((deadline, index) => {
+                                  const alreadyInCart = isInCart(deadline.id, deadline.studentId?.toString());
+                                  const isSelected = selectedDeadlineItems.has(deadline.id);
+                                  return (
                                   <div
                                     key={deadline.id}
                                     className={cn(
-                                      "flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-muted/50 rounded-lg gap-2 cursor-pointer hover:bg-muted/70 transition-colors",
+                                      "flex items-center gap-3 p-3 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70 transition-colors",
+                                      alreadyInCart && "opacity-50",
                                       isMobile && "animate-stagger-in opacity-0"
                                     )}
                                     style={isMobile ? { animationDelay: `${index * 60}ms` } : undefined}
-                                    onClick={() => handleDeadlineClick(deadline.type)}
+                                    onClick={(e) => {
+                                      if (alreadyInCart) return;
+                                      setSelectedDeadlineItems(prev => {
+                                        const next = new Set(prev);
+                                        if (next.has(deadline.id)) next.delete(deadline.id);
+                                        else next.add(deadline.id);
+                                        return next;
+                                      });
+                                    }}
                                   >
+                                    <Checkbox
+                                      checked={alreadyInCart || isSelected}
+                                      disabled={alreadyInCart}
+                                      onCheckedChange={() => {}}
+                                      className="shrink-0"
+                                    />
                                     <div className="min-w-0 flex-1">
                                       <p className={`font-medium text-sm ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                                         {deadline.title}
@@ -1060,20 +1072,42 @@ export const ParentPortal = ({
                                         {deadline.studentName} • {t('portal.due')}: {new Date(deadline.dueDate).toLocaleDateString(language === 'th' ? 'th-TH' : language === 'zh' ? 'zh-CN' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                                       </p>
                                     </div>
-                                    <Badge variant="outline" className="self-start sm:self-center">
+                                    <Badge variant="outline" className="self-center shrink-0">
                                       {formatCurrency(deadline.amount)}
                                     </Badge>
                                   </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </AccordionContent>
                           </AccordionItem>
                         );
                       })}
                     </Accordion>
+                    {selectedDeadlineItems.size > 0 && (
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          onClick={() => {
+                            mappedDeadlines
+                              .filter(d => selectedDeadlineItems.has(d.id))
+                              .forEach(d => {
+                                handleAddToCart(d.id, d.type as any, d.studentId?.toString());
+                              });
+                            setSelectedDeadlineItems(new Set());
+                          }}
+                          className="gap-2"
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                          {language === 'th' ? 'เพิ่มลงตะกร้า' : language === 'zh' ? '加入购物车' : 'Add to Cart'} ({selectedDeadlineItems.size})
+                        </Button>
+                      </div>
+                    )}
+                    </div>
                   );
                 })()}
-              </CardContent>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </Card>}
           </TabsContent>
 

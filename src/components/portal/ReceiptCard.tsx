@@ -26,7 +26,7 @@ export const ReceiptCard = ({ receipt, onDownload }: ReceiptCardProps) => {
   const paymentMethodConfig = {
     credit_card: { label: 'Credit Card', icon: CreditCard, color: 'bg-primary/20 text-primary' },
     bank_transfer: { label: 'Bank Transfer', icon: DollarSign, color: 'bg-finance-green/20 text-finance-green' },
-    credit_note: { label: 'Credit Note', icon: FileText, color: 'bg-info-cyan/20 text-info-cyan' },
+    credit_note: { label: 'Refund / Credit Balance', icon: FileText, color: 'bg-info-cyan/20 text-info-cyan' },
     cash: { label: 'Cash', icon: DollarSign, color: 'bg-warning-orange/20 text-warning-orange' },
   };
 

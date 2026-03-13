@@ -392,7 +392,7 @@ export const mockCreditNoteHistory = [
     amount: 3500,
     description: "Early payment discount reward",
     issued_at: "2024-11-20",
-    type: "discount" as const,
+    type: "refund" as const,
     status: "active" as const,
     academicYear: "2024",
     usedAmount: 0
@@ -460,6 +460,48 @@ export const mockCreditNoteHistory = [
     usedAmount: 1800,
     appliedToInvoice: "INV-2024-005",
     appliedAt: "2024-02-01"
+  },
+  {
+    id: "CN-2024-006",
+    student_id: 1,
+    studentName: "Emma Johnson",
+    amount: 4200,
+    description: "Term 1 tuition payment",
+    issued_at: "2024-03-15",
+    type: "used" as const,
+    status: "used" as const,
+    academicYear: "2024",
+    usedAmount: 4200,
+    appliedToInvoice: "INV-2024-008",
+    appliedAt: "2024-05-20"
+  },
+  {
+    id: "CN-2024-007",
+    student_id: 3,
+    studentName: "Sophia Johnson",
+    amount: 2800,
+    description: "Trip cancellation credit",
+    issued_at: "2024-06-01",
+    type: "cancellation" as const,
+    status: "used" as const,
+    academicYear: "2024",
+    usedAmount: 2800,
+    appliedToInvoice: "INV-2024-010",
+    appliedAt: "2024-07-15"
+  },
+  {
+    id: "CN-2023-018",
+    student_id: 2,
+    studentName: "Liam Johnson",
+    amount: 5500,
+    description: "Exam fee overpayment",
+    issued_at: "2023-09-20",
+    type: "overpayment" as const,
+    status: "used" as const,
+    academicYear: "2023",
+    usedAmount: 5500,
+    appliedToInvoice: "INV-2024-003",
+    appliedAt: "2024-01-05"
   }
 ];
 

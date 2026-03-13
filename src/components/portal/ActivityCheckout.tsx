@@ -54,7 +54,7 @@ export const ActivityCheckout = ({
   onCancel,
   onRemoveItem
 }: ActivityCheckoutProps) => {
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethods[0]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<typeof paymentMethods[0] | null>(null);
   const [showPaymentProcessing, setShowPaymentProcessing] = useState(false);
   const { language, formatCurrency, t } = useLanguage();
 
@@ -64,9 +64,11 @@ export const ActivityCheckout = ({
   const creditApplied = totalCreditApplied;
   const amountAfterCredit = subtotalAmount - creditApplied;
   
-  const paymentFee = selectedPaymentMethod.currency === '%' 
-    ? amountAfterCredit * (selectedPaymentMethod.fee / 100)
-    : selectedPaymentMethod.fee;
+  const paymentFee = selectedPaymentMethod
+    ? (selectedPaymentMethod.currency === '%'
+      ? amountAfterCredit * (selectedPaymentMethod.fee / 100)
+      : selectedPaymentMethod.fee)
+    : 0;
   
   const totalAmount = amountAfterCredit + paymentFee;
 
@@ -140,7 +142,7 @@ export const ActivityCheckout = ({
                 <div
                   key={method.id}
                   className={`p-6 rounded-lg cursor-pointer transition-all text-center border-2 ${
-                    selectedPaymentMethod.id === method.id
+                    selectedPaymentMethod?.id === method.id
                       ? 'border-primary bg-primary/5 shadow-md'
                       : 'border-muted/20 hover:border-muted/40 hover:bg-muted/10'
                   }`}
@@ -244,11 +246,11 @@ export const ActivityCheckout = ({
                   <div className={`flex flex-col ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                     <span>{'Bank fee'}</span>
                     <span className="text-xs text-muted-foreground">
-                      ({language === 'th' ? selectedPaymentMethod.name :
+                      ({selectedPaymentMethod ? (language === 'th' ? selectedPaymentMethod.name :
                         language === 'zh' ? (selectedPaymentMethod.id === 'credit_card' ? '信用卡' :
                                              selectedPaymentMethod.id === 'promptpay' ? 'PromptPay' : selectedPaymentMethod.name) :
                         (selectedPaymentMethod.id === 'credit_card' ? 'Credit Card' :
-                         selectedPaymentMethod.id === 'promptpay' ? 'PromptPay' : selectedPaymentMethod.name)})
+                         selectedPaymentMethod.id === 'promptpay' ? 'PromptPay' : selectedPaymentMethod.name)) : '-'})
                     </span>
                   </div>
                   <span className={`shrink-0 ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{formatCurrency(paymentFee)}</span>
@@ -263,9 +265,9 @@ export const ActivityCheckout = ({
               </div>
 
               <div className="flex flex-col gap-3 pt-4">
-                <Button onClick={handlePayment} size="lg" className={`w-full ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+                <Button onClick={handlePayment} size="lg" disabled={!selectedPaymentMethod} className={`w-full ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  {t('portal.pay')} {formatCurrency(totalAmount)}
+                  {selectedPaymentMethod ? `${t('portal.pay')} ${formatCurrency(totalAmount)}` : (language === 'th' ? 'กรุณาเลือกช่องทางชำระ' : 'Select payment method')}
                 </Button>
                 <Button variant="outline" onClick={onCancel} className={`w-full ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                   {t('portal.cancel')}

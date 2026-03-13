@@ -37,7 +37,7 @@ const paymentMethods = [
 
 export const PaymentFlow = ({ invoice, creditBalance, onPaymentSuccess, onCancel }: PaymentFlowProps) => {
   const [useCreditNote, setUseCreditNote] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(paymentMethods[0]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<typeof paymentMethods[0] | null>(null);
   const { language, formatCurrency, t } = useLanguage();
 
   // Calculate amounts - Always use termly payment
@@ -45,9 +45,11 @@ export const PaymentFlow = ({ invoice, creditBalance, onPaymentSuccess, onCancel
   const creditApplied = useCreditNote ? Math.min(creditBalance, baseAmount) : 0;
   const subtotal = baseAmount - creditApplied;
   
-  const paymentFee = selectedPaymentMethod.currency === '%' 
-    ? subtotal * (selectedPaymentMethod.fee / 100)
-    : selectedPaymentMethod.fee;
+  const paymentFee = selectedPaymentMethod
+    ? (selectedPaymentMethod.currency === '%'
+      ? subtotal * (selectedPaymentMethod.fee / 100)
+      : selectedPaymentMethod.fee)
+    : 0;
   
   const totalAmount = subtotal + paymentFee;
 
@@ -60,7 +62,7 @@ export const PaymentFlow = ({ invoice, creditBalance, onPaymentSuccess, onCancel
       baseAmount,
       creditApplied,
       paymentFee,
-      paymentMethod: t(selectedPaymentMethod.name),
+      paymentMethod: selectedPaymentMethod ? t(selectedPaymentMethod.name) : '',
       paymentType: 'Termly',
       paymentDate: new Date().toISOString()
     };
@@ -113,7 +115,7 @@ export const PaymentFlow = ({ invoice, creditBalance, onPaymentSuccess, onCancel
                   <div
                     key={method.id}
                     className={`p-6 rounded-lg cursor-pointer transition-all text-center border-2 ${
-                      selectedPaymentMethod.id === method.id
+                      selectedPaymentMethod?.id === method.id
                         ? 'border-primary bg-primary/5 shadow-md'
                         : 'border-muted/20 hover:border-muted/40 hover:bg-muted/10'
                     }`}
@@ -159,7 +161,7 @@ export const PaymentFlow = ({ invoice, creditBalance, onPaymentSuccess, onCancel
               )}
               
               <div className="flex justify-between">
-                <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{t('portal.paymentFee')} ({t(selectedPaymentMethod.name)})</span>
+                <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{t('portal.paymentFee')} ({selectedPaymentMethod ? t(selectedPaymentMethod.name) : '-'})</span>
                 <span className={`${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>{formatCurrency(paymentFee)}</span>
               </div>
               
@@ -172,9 +174,9 @@ export const PaymentFlow = ({ invoice, creditBalance, onPaymentSuccess, onCancel
             </div>
 
             <div className="flex flex-col gap-3 pt-4">
-              <Button onClick={handlePayment} size="lg" className={`w-full ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
+              <Button onClick={handlePayment} size="lg" disabled={!selectedPaymentMethod} className={`w-full ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                 <CreditCard className="h-4 w-4 mr-2" />
-                {t('portal.pay')} {formatCurrency(totalAmount)}
+                {selectedPaymentMethod ? `${t('portal.pay')} ${formatCurrency(totalAmount)}` : (language === 'th' ? 'กรุณาเลือกช่องทางชำระ' : 'Select payment method')}
               </Button>
               <Button variant="outline" onClick={onCancel} className={`w-full ${language === 'th' ? 'font-sukhumvit' : language === 'zh' ? 'font-noto-sc' : 'font-lato'}`}>
                 {t('portal.cancel')}

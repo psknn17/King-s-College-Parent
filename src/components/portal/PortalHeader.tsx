@@ -204,10 +204,23 @@ export const PortalHeader = ({
             <LanguageSelector />
           </div>
 
-          {/* Mobile Menu Button */}
-          <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-            <Menu className="h-5 w-5" />
-          </Button>
+          {/* Mobile: Cart + Menu Button */}
+          <div className="lg:hidden flex items-center gap-1">
+            <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0" onClick={onGoToCart}>
+              <ShoppingCart className="h-5 w-5" />
+              {cartItemCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px] font-bold"
+                >
+                  {cartItemCount > 99 ? '99+' : cartItemCount}
+                </Badge>
+              )}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
@@ -269,18 +282,8 @@ export const PortalHeader = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-between px-2 pt-3 border-t border-border">
+            <div className="flex items-center px-2 pt-3 border-t border-border">
               <LanguageSelector />
-              <div className="flex items-center gap-2">
-                {cartItemCount > 0 && (
-                  <Button variant="ghost" size="sm" className="relative" onClick={onGoToCart}>
-                    <ShoppingCart className="h-4 w-4" />
-                    <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                      {cartItemCount}
-                    </Badge>
-                  </Button>
-                )}
-              </div>
             </div>
 
             {/* Account Actions */}
